@@ -82,7 +82,7 @@ const CustomerSedi = () => {
 
   const columns: GridColDef[] = [
     {
-      field: 'descr1',
+      field: 'description',
       headerName: 'Denominazione',
       flex: 1,
       minWidth: 180,
@@ -92,6 +92,7 @@ const CustomerSedi = () => {
       headerName: 'Indirizzo',
       flex: 1.5,
       minWidth: 200,
+      valueGetter: (value) => value || 'N/A',
     },
     {
       field: 'city',
@@ -99,7 +100,7 @@ const CustomerSedi = () => {
       width: 130,
     },
     {
-      field: 'DestinationType',
+      field: 'typeDescription',
       headerName: 'Tipo Destinazione',
       width: 150,
       align: 'center',

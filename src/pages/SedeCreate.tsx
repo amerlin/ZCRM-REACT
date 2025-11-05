@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Container,
@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import customersService from '../services/customers.service';
+import type { DestinationType, CreateDestinationRequest, UpdateDestinationRequest } from '../services/customers.service';
 
 interface CustomerInfo {
   ragsoc: string;
@@ -38,11 +39,6 @@ interface CustomerInfo {
 interface Provincia {
   shortdescription: string;
   fulldescription: string;
-}
-
-interface TipologiaSede {
-  id: string;
-  description: string;
 }
 
 const SedeCreate = () => {
@@ -67,19 +63,10 @@ const SedeCreate = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Dropdown lists
-  const [tipologiaSedeList, setTipologiaSedeList] = useState<TipologiaSede[]>([]);
+  const [tipologiaSedeList, setTipologiaSedeList] = useState<DestinationType[]>([]);
   const [provinciaList, setProvinciaList] = useState<Provincia[]>([]);
 
-  // Delete dialog
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  useEffect(() => {
-    loadCustomerInfo();
-    loadTipologiaSedeList();
-    loadProvinciaList();
-  }, [customerId]);
-
-  const loadCustomerInfo = async () => {
+  const loadCustomerInfo = useCallback(async () => {
     if (!customerId) return;
     
     try {
@@ -96,29 +83,66 @@ const SedeCreate = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [customerId]);
+
+  const loadSedeData = useCallback(async () => {
+    if (!sedeId) return;
+    
+    try {
+      const sedeData = await customersService.getDestinationById(sedeId);
+      setTipologiaSede(sedeData.destinationTypeId.toString());
+      setDescrizione(sedeData.descr1);
+      setIndirizzo(sedeData.address);
+      setCitta(sedeData.city);
+      setEmail(sedeData.email);
+      setTelefono(sedeData.telephoneNumber);
+      setProvincia(sedeData.county);
+      setRiferimento(sedeData.personReference);
+    } catch (error) {
+      console.error('Error loading sede data:', error);
+      toast.error('Errore nel caricamento dei dati della sede');
+    }
+  }, [sedeId]);
+
+  useEffect(() => {
+    loadCustomerInfo();
+    loadTipologiaSedeList();
+    loadProvinciaList();
+    if (isEditMode) {
+      loadSedeData();
+    }
+  }, [loadCustomerInfo, isEditMode, loadSedeData]);
 
   const loadTipologiaSedeList = async () => {
     try {
-      console.log('Loading tipologia sede list...');
+      const tipologieData = await customersService.getDestinationTypes();
+      setTipologiaSedeList(tipologieData);
+    } catch (error) {
+      console.error('Error loading tipologia sede list:', error);
+      toast.error('Errore nel caricamento delle tipologie di sede');
       
-      // Sample data
+      // Fallback to sample data in case of error
       setTipologiaSedeList([
         { id: '1', description: 'Sede Legale' },
         { id: '2', description: 'Sede Operativa' },
         { id: '3', description: 'Magazzino' },
         { id: '4', description: 'Filiale' },
       ]);
-    } catch (error) {
-      console.error('Error loading tipologia sede list:', error);
     }
   };
 
   const loadProvinciaList = async () => {
     try {
-      console.log('Loading provincia list...');
-    
-      // Sample data
+      const provincieData = await customersService.getProvinces();
+      setProvinciaList(provincieData.map(p => ({
+        shortdescription: p.shortDescription,
+        fulldescription: p.fullDescription
+      })));
+    } catch (error) {
+      console.error('Error loading provincia list:', error);
+      toast.error('Errore nel caricamento delle province');
+      
+      // Fallback to sample data in case of error
       setProvinciaList([
         { shortdescription: 'MI', fulldescription: 'Milano' },
         { shortdescription: 'RM', fulldescription: 'Roma' },
@@ -129,13 +153,11 @@ const SedeCreate = () => {
         { shortdescription: 'BO', fulldescription: 'Bologna' },
         { shortdescription: 'FI', fulldescription: 'Firenze' },
       ]);
-    } catch (error) {
-      console.error('Error loading provincia list:', error);
     }
   };
 
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
     return emailRegex.test(email);
   };
 
@@ -144,18 +166,14 @@ const SedeCreate = () => {
   };
 
   const handleSave = async () => {
-    // Validation
+    // Validation - Campo tipologia sede obbligatorio
     if (!tipologiaSede) {
       toast.warning('Campo Tipologia Sede non impostato.');
       return;
     }
 
-    if (tipologiaSede !== '1' && tipologiaSede !== '2') {
-      toast.warning('Campo Tipologia Sede non impostato.');
-      return;
-    }
-
-    if (!descrizione) {
+    // Validation - Campo descrizione obbligatorio
+    if (!descrizione.trim()) {
       toast.warning('Il campo Descrizione deve essere compilato.');
       return;
     }
@@ -166,43 +184,64 @@ const SedeCreate = () => {
     }
 
     if (telefono && !validateTelefono(telefono)) {
-      toast.warning('Il campo Telefono pu� contenere solo numeri.');
+      toast.warning('Il campo Telefono può contenere solo numeri.');
       return;
     }
 
     if (email && !validateEmail(email)) {
-      toast.warning('Il campo Email non � corretto.');
+      toast.warning('Il campo Email non è corretto.');
       return;
     }
 
     setIsBusy(true);
     try {
-      // TODO: Implement API call to create sede
-      console.log('Creating sede for customer:', customerId);
-      
-      const sedeData = {
-        id: 0,
-        customerId: customerId,
-        customerDescription: '',
-        descr1: descrizione,
-        descr2: '',
-        address: indirizzo,
-        city: citta,
-        email: email,
-        telephonenumber: telefono,
-        mobilenumber: '',
-        county: provincia,
-        personreference: riferimento,
-        destinationtype: tipologiaSede,
-      };
-      
-      console.log('Sede data:', sedeData);
+      if (isEditMode) {
+        // Preparazione dati per l'aggiornamento
+        const updateData: UpdateDestinationRequest = {
+          id: parseInt(sedeId || '0'),
+          customerId: customerId || '',
+          customerDescription: '',
+          descr1: descrizione.trim(),
+          descr2: '',
+          address: indirizzo.trim(),
+          city: citta.trim(),
+          email: email.trim(),
+          telephonenumber: telefono.trim(),
+          mobilenumber: '',
+          county: provincia,
+          personreference: riferimento.trim(),
+          destinationtype: tipologiaSede,
+        };
+        
+        console.log('Update sede data to be sent:', updateData);
+        await customersService.updateDestination(updateData);
+      } else {
+        // Preparazione dati per la creazione
+        const sedeData: CreateDestinationRequest = {
+          id: 0,
+          customerId: customerId || '',
+          customerDescription: '',
+          descr1: descrizione.trim(),
+          descr2: '',
+          address: indirizzo.trim(),
+          city: citta.trim(),
+          email: email.trim(),
+          telephonenumber: telefono.trim(),
+          mobilenumber: '',
+          county: provincia,
+          personreference: riferimento.trim(),
+          destinationtype: tipologiaSede,
+        };
+        
+        console.log('Create sede data to be sent:', sedeData);
+        await customersService.createDestination(sedeData);
+      }
 
       const successMessage = isEditMode ? 'Sede aggiornata con successo!' : 'Sede creata con successo!';
       toast.success(successMessage);
       navigate(`/customers/${customerId}/sedi`);
     } catch (error) {
-      console.error('Error creating sede:', error);
+      console.error('Error saving sede:', error);
       const errorMessage = isEditMode ? 'Errore nell\'aggiornamento della sede' : 'Errore nella creazione della sede';
       toast.error(errorMessage);
     } finally {
@@ -215,18 +254,18 @@ const SedeCreate = () => {
   };
 
   const handleDeleteConfirm = async () => {
+    if (!sedeId) return;
+    
     setIsBusy(true);
     setDeleteDialogOpen(false);
     
     try {
-   // TODO: Implement API call to delete sede
-      console.log('Deleting sede:', sedeId);
-      
+      await customersService.deleteDestination(sedeId);
       toast.success('Sede eliminata con successo!');
       navigate(`/customers/${customerId}/sedi`);
     } catch (error) {
       console.error('Error deleting sede:', error);
-  toast.error('Errore nell\'eliminazione della sede');
+      toast.error('Errore nell\'eliminazione della sede');
     } finally {
       setIsBusy(false);
     }
