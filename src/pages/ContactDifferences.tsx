@@ -24,12 +24,15 @@ import {
 import { toast } from 'react-toastify';
 import customersService, { type ReferenceDifferences, type Reference } from '../services/customers.service';
 
+// Tipo esteso per includere customerDescription
+type ReferenceWithCustomer = Reference & { customerDescription?: string };
+
 const ContactDifferences = () => {
   const { id, confirmedId } = useParams<{ id: string; confirmedId: string }>();
   const navigate = useNavigate();
   const [isBusy, setIsBusy] = useState(false);
   const [differences, setDifferences] = useState<ReferenceDifferences[]>([]);
-  const [referenceInfo, setReferenceInfo] = useState<Reference | null>(null);
+  const [referenceInfo, setReferenceInfo] = useState<ReferenceWithCustomer | null>(null);
 
   useEffect(() => {
     const loadDifferences = async () => {
@@ -116,7 +119,7 @@ const ContactDifferences = () => {
               <Typography variant="body1">
                 <strong>Cliente:</strong> {(() => {
                   // Provo con customerDescription dal reference
-                  const customerName = (referenceInfo as unknown as any)?.customerDescription || 
+                  const customerName = referenceInfo?.customerDescription || 
                                      'N/A';
                   console.log('Displaying customer name:', customerName, {
                     referenceInfo: referenceInfo

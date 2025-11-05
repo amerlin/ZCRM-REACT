@@ -21,9 +21,9 @@ export interface Customer {
   mobileNumber?: string;
   extraNumber?: string;
   personreference?: string;
-  provincia?: { id: string; [key: string]: any };
+  provincia?: { id: string; [key: string]: string | number | boolean };
   agentId?: string;
-  privacy?: { id: string; [key: string]: any };
+  privacy?: { id: string; [key: string]: string | number | boolean };
   customerCategoryType?: Array<{ id: string; name: string; shortDescription: string; value: boolean }>;
   customerType?: Array<{ id: number; name: string; shortName: string }>;
   isActiveCustomer?: boolean;

@@ -24,12 +24,15 @@ import {
 import { toast } from 'react-toastify';
 import customersService, { type ReferenceDifferences, type DestinationDetail } from '../services/customers.service';
 
+// Tipo esteso per includere customerDescription
+type DestinationWithCustomer = DestinationDetail & { customerDescription?: string };
+
 const DestinationDifferences = () => {
   const { id, confirmedId } = useParams<{ id: string; confirmedId: string }>();
   const navigate = useNavigate();
   const [isBusy, setIsBusy] = useState(false);
   const [differences, setDifferences] = useState<ReferenceDifferences[]>([]);
-  const [destinationInfo, setDestinationInfo] = useState<DestinationDetail | null>(null);
+  const [destinationInfo, setDestinationInfo] = useState<DestinationWithCustomer | null>(null);
 
   useEffect(() => {
     const loadDifferences = async () => {
@@ -115,8 +118,8 @@ const DestinationDifferences = () => {
               </Typography>
               <Typography variant="body1">
                 <strong>Cliente:</strong> {(() => {
-                  // Provo con customerDescription dalla destinazione
-                  const customerName = (destinationInfo as unknown as any)?.customerDescription || 
+                  // Provo con customerDescription dal destination
+                  const customerName = destinationInfo?.customerDescription || 
                                      'N/A';
                   console.log('Displaying customer name:', customerName, {
                     destinationInfo: destinationInfo
