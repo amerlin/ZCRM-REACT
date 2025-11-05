@@ -60,6 +60,8 @@ const SedeCreate = () => {
   const [telefono, setTelefono] = useState('');
   const [provincia, setProvincia] = useState('');
   const [riferimento, setRiferimento] = useState('');
+  const [isActive, setIsActive] = useState(true);
+  const [destinationReferenceId, setDestinationReferenceId] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Dropdown lists
@@ -98,6 +100,8 @@ const SedeCreate = () => {
       setTelefono(sedeData.telephoneNumber);
       setProvincia(sedeData.county);
       setRiferimento(sedeData.personReference);
+      setIsActive(sedeData.isActive || true);
+      setDestinationReferenceId(sedeData.destinationReferenceId || 0);
     } catch (error) {
       console.error('Error loading sede data:', error);
       toast.error('Errore nel caricamento dei dati della sede');
@@ -211,6 +215,8 @@ const SedeCreate = () => {
           county: provincia,
           personreference: riferimento.trim(),
           destinationtype: tipologiaSede,
+          isActive: isActive,
+          destinationReferenceId: destinationReferenceId,
         };
         
         console.log('Update sede data to be sent:', updateData);

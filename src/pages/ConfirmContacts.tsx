@@ -48,7 +48,7 @@ const ConfirmContacts = () => {
     loadContacts();
   };
 
-  const handleConfirm = async (id: string, customerId: string) => {
+  const handleConfirm = async (id: string) => {
     try {
       await customersService.confirmReference(id);
       toast.success('Modifiche confermate con successo');
@@ -60,7 +60,7 @@ const ConfirmContacts = () => {
     }
   };
 
-  const handleDismiss = async (id: string, customerId: string) => {
+  const handleDismiss = async (id: string) => {
     try {
       await customersService.dismissReference(id);
       toast.success('Modifiche dismesse con successo');
@@ -129,7 +129,7 @@ const ConfirmContacts = () => {
           })()}
           <IconButton
             size="small"
-            onClick={() => handleConfirm(params.row.id, params.row.customerId)}
+            onClick={() => handleConfirm(params.row.id)}
             sx={{ 
               color: '#4caf50',
               '&:hover': { backgroundColor: 'rgba(76, 175, 80, 0.1)' }
@@ -140,7 +140,7 @@ const ConfirmContacts = () => {
           </IconButton>
           <IconButton
             size="small"
-            onClick={() => handleDismiss(params.row.id, params.row.customerId)}
+            onClick={() => handleDismiss(params.row.id)}
             sx={{ 
               color: '#f44336',
               '&:hover': { backgroundColor: 'rgba(244, 67, 54, 0.1)' }

@@ -13,7 +13,6 @@ TextField,
   InputLabel,
   Checkbox,
   FormControlLabel,
-  Grid,
   CircularProgress,
   IconButton,
 } from '@mui/material';
@@ -21,6 +20,7 @@ import {
   Search as SearchIcon,
   ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
+import { type Customer } from '../services/customers.service';
 
 interface Agent {
   id: string;
@@ -69,7 +69,7 @@ const CustomersSearch = () => {
   const [categoryList, setCategoryList] = useState<Category[]>([]);
 
   const [isBusy, setIsBusy] = useState(false);
-  const [customerList] = useState<any[]>([]);
+  const [customerList] = useState<Customer[]>([]);
 
   useEffect(() => {
     // Load dropdown data
@@ -159,13 +159,11 @@ height: '30px',
  <Box sx={{ mb: 2 }} />
 
       {/* Info Note */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-   <Grid item xs={12}>
-      <Typography variant="body2">
-            NOTA: La funzione ottimistica permette di ricercare nel SOLO campo RAGIONE SOCIALE tutti i clienti che contengono ALMENO una parola.
-          </Typography>
-      </Grid>
-      </Grid>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2">
+          NOTA: La funzione ottimistica permette di ricercare nel SOLO campo RAGIONE SOCIALE tutti i clienti che contengono ALMENO una parola.
+        </Typography>
+      </Box>
 
       {/* Spacer */}
       <Box sx={{ mb: 2 }} />

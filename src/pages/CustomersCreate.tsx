@@ -13,7 +13,6 @@ import {
   InputLabel,
   Checkbox,
   FormControlLabel,
-  Grid,
   Paper,
   Table,
   TableHead,
@@ -349,22 +348,7 @@ const CustomersCreate = () => {
     }
   };
 
-  const handleDelete = async () => {
-    setIsBusy(true);
-    try {
-      // TODO: Implement delete API call
-      console.log('Deleting customer ID:', id);
-      // await deleteCustomer(id);
-      toast.success('Cliente eliminato con successo!');
-      navigate('/customers/lists');
-    } catch (error) {
-      console.error('Error deleting customer:', error);
-      toast.error('Errore nell\'eliminazione del cliente');
-    } finally {
-      setIsBusy(false);
-      setDeleteDialogOpen(false);
-    }
-  };
+  // Note: handleDelete function removed as it's not used in this component
 
   const handleTabChange = (tab: string) => {
     // Navigate to the specific page

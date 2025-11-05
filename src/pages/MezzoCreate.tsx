@@ -86,7 +86,7 @@ const MezzoCreate = () => {
   // Verifica matricola
   const [matricolaValida, setMatricolaValida] = useState(false);
   const [matricolaUsata, setMatricolaUsata] = useState(false);
-  const [matricolaClienteDescrizione, setMatricolaClienteDescrizione] = useState('');
+  // Note: matricolaClienteDescrizione removed as not used
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Dropdown lists
@@ -94,8 +94,7 @@ const MezzoCreate = () => {
   const [marcaList, setMarcaList] = useState<Marca[]>([]);
   const [annoProduzioneList, setAnnoProduzioneList] = useState<Array<{ id: number; description: string }>>([]);
 
-  // Dialog state
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // Note: isDeleteDialogOpen duplicate removed - using deleteDialogOpen instead
 
   useEffect(() => {
     loadCustomerInfo();
@@ -204,11 +203,8 @@ return;
     try {
       // TODO: Implement API call
       console.log('Checking matricola:', matricola);
-   const request = {
-  customerid: customerId,
-        itemid: 0,
-        matricola: matricola
-      };
+      // Note: request object removed as API is not yet implemented
+      // const request = { customerid: customerId, itemid: 0, matricola: matricola };
 
       // Simulate API call
       // const response = await itemsService.checkMatricola(request);
@@ -494,10 +490,10 @@ const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del mezzo' : 'Erro
     </Typography>
 )}
       {matricolaUsata && (
-  <Typography variant="body2" color="error.main" sx={{ ml: 2 }}>
-    ? Matricola gi� presente - Cliente: {matricolaClienteDescrizione}
-   </Typography>
-  )}
+        <Typography variant="body2" color="error.main" sx={{ ml: 2 }}>
+          ⚠ Matricola già presente
+        </Typography>
+      )}
         </Box>
 
         {/* Anno, Anno di produzione, Telematics - Row 5 */}

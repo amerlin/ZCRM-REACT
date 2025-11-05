@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import customersService, { Customer } from '../services/customers.service';
+import customersService, { type Customer } from '../services/customers.service';
 import { toast } from 'react-toastify';
 
 const ExampleCustomerComponent = () => {
@@ -28,47 +28,17 @@ const ExampleCustomerComponent = () => {
     }
   };
 
-  const handleCreateCustomer = async (customerData: Partial<Customer>) => {
-    try {
- const newCustomer = await customersService.create(customerData);
-      toast.success('Cliente creato con successo!');
-      setCustomers([...customers, newCustomer]);
-    } catch (error) {
-  console.error('Error creating customer:', error);
-      toast.error('Errore nella creazione del cliente');
-    }
-  };
+  // Note: handleCreateCustomer, handleUpdateCustomer, and handleDeleteCustomer 
+  // functions removed as they are not used in this example component
 
-  const handleUpdateCustomer = async (id: string, customerData: Partial<Customer>) => {
-    try {
-      const updatedCustomer = await customersService.update(id, customerData);
-      toast.success('Cliente aggiornato con successo!');
-      setCustomers(customers.map(c => c.id === id ? updatedCustomer : c));
-    } catch (error) {
-      console.error('Error updating customer:', error);
-      toast.error('Errore nell\'aggiornamento del cliente');
-    }
-  };
-
-  const handleDeleteCustomer = async (id: string) => {
-    try {
-      await customersService.delete(id);
-      toast.success('Cliente eliminato con successo!');
-      setCustomers(customers.filter(c => c.id !== id));
-    } catch (error) {
-      console.error('Error deleting customer:', error);
-  toast.error('Errore nell\'eliminazione del cliente');
-    }
-  };
-
-return (
+  return (
     <div>
       {loading ? (
         <p>Caricamento...</p>
       ) : (
         <ul>
           {customers.map(customer => (
-            <li key={customer.id}>{customer.ragsoc}</li>
+            <li key={customer.id}>{customer.descr1}</li>
           ))}
         </ul>
       )}
