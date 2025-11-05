@@ -45,6 +45,21 @@ export interface CustomerListResponse {
   total: number;
 }
 
+export interface ProcessSummary {
+  totalNewElements: number;
+  totalModifiedElements: number;
+  existNewElements: boolean;
+  existModifiedElements: boolean;
+  newCustomers: number;
+  modifiedCustomers: number;
+  newDestinations: number;
+  modifiedDestinations: number;
+  newReferences: number;
+  modifiedReferences: number;
+  newItems: number;
+  modifiedItems: number;
+}
+
 export interface Destination {
   id: number;
   description: string;
@@ -336,6 +351,13 @@ class CustomersService {
    */
   async deleteReference(referenceId: string): Promise<void> {
     return apiService.delete<void>(`/references/delete/${referenceId}`);
+  }
+
+  /**
+   * Get process summary to check for pending confirmations
+   */
+  async getProcessSummary(): Promise<ProcessSummary> {
+    return apiService.get<ProcessSummary>(`/process/GetSummary`);
   }
 }
 

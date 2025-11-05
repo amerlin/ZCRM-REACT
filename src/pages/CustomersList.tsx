@@ -7,7 +7,6 @@ import {
   Button,
   Box,
   Divider,
-  Alert,
   CircularProgress,
   IconButton,
 } from '@mui/material';
@@ -21,12 +20,7 @@ import {
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { toast } from 'react-toastify';
-import customersService from '../services/customers.service';
-
-interface Summary {
-  esistnewelement?: boolean;
-  esistmodifiedelement?: boolean;
-}
+import customersService, { type ProcessSummary } from '../services/customers.service';
 
 interface Customer {
   id: string;
@@ -40,7 +34,7 @@ const CustomersList = () => {
   const navigate = useNavigate();
   const { hasAdministrativeGrants } = useAuth();
   const [isBusy, setIsBusy] = useState(false);
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [summary, setSummary] = useState<ProcessSummary | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
@@ -51,19 +45,39 @@ const CustomersList = () => {
     //   return;
     // }
 
-    // Load summary if admin
-    if (hasAdministrativeGrants) {
-      loadSummary();
-    }
+    console.log('hasAdministrativeGrants:', hasAdministrativeGrants);
+
+    // Load summary always (admin check disabled)
+    loadSummary();
 
     // Load customers list
     loadCustomers();
   }, [hasAdministrativeGrants]); // Removed isAuthenticated and navigate from dependencies
 
   const loadSummary = async () => {
-    // TODO: Implement API call to fetch summary
-    console.log('Load summary...');
-    setSummary({ esistnewelement: false, esistmodifiedelement: false });
+    try {
+      const summaryData = await customersService.getProcessSummary();
+      setSummary(summaryData);
+    } catch (error) {
+      console.error('Error loading process summary:', error);
+      toast.error('Errore nel caricamento del riassunto processi');
+    }
+  };
+
+  // Helper function to check if there are elements to confirm
+  const hasElementsToConfirm = (summary: ProcessSummary | null): boolean => {
+    if (!summary) return false;
+    
+    return summary.totalNewElements > 0 ||
+           summary.totalModifiedElements > 0 ||
+           summary.newCustomers > 0 ||
+           summary.modifiedCustomers > 0 ||
+           summary.newDestinations > 0 ||
+           summary.modifiedDestinations > 0 ||
+           summary.newReferences > 0 ||
+           summary.modifiedReferences > 0 ||
+           summary.newItems > 0 ||
+           summary.modifiedItems > 0;
   };
 
   const loadCustomers = async () => {
@@ -205,26 +219,26 @@ textTransform: 'uppercase',
 
       <Divider sx={{ mb: 3 }} />
 
-      {/* Admin Alert - Show only if there are pending confirmations */}
-      {hasAdministrativeGrants && (summary?.esistnewelement || summary?.esistmodifiedelement) && (
-        <Box sx={{ mb: 3 }}>
-          <Alert 
- severity="warning"
-         sx={{ 
-            backgroundColor: '#93c54b',
-   color: 'white',
-  '& .MuiAlert-icon': {
-      color: 'white',
-         },
-          }}
- onClick={() => navigate('/summary')}
-  style={{ cursor: 'pointer' }}
-     >
-       <Typography variant="h6" sx={{ fontWeight: 500 }}>
-Attenzione esistono elementi da confermare
-</Typography>
-          </Alert>
-   </Box>
+      {/* Confirmation Button - Show if there are pending confirmations (admin check disabled) */}
+      {hasElementsToConfirm(summary) && (
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/summary')}
+            sx={{
+              backgroundColor: '#f57c00',
+              color: 'white',
+              textTransform: 'uppercase',
+              fontWeight: 'bold',
+              fontSize: '11px',
+              '&:hover': {
+                backgroundColor: '#ef6c00',
+              },
+            }}
+          >
+            Ci sono degli elementi da confermare
+          </Button>
+        </Box>
       )}
 
       {/* DataGrid */}
