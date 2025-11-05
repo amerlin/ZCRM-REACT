@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Container,
@@ -19,6 +19,7 @@ import {
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import customersService from '../services/customers.service';
+import type { Reference } from '../services/customers.service';
 import { toast } from 'react-toastify';
 
 interface CustomerInfo {
@@ -28,30 +29,14 @@ interface CustomerInfo {
   provincia: string;
 }
 
-interface Contatto {
-  id: string;
-  nome: string;
-  cognome: string;
-  ruolo: string;
-  telefono: string;
-  cellulare: string;
-  email: string;
-  note: string;
-}
-
 const CustomerContatti = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
-  const [contatti, setContatti] = useState<Contatto[]>([]);
+  const [contatti, setContatti] = useState<Reference[]>([]);
 
-  useEffect(() => {
-    loadCustomerInfo();
-    loadContatti();
-  }, [id]);
-
-  const loadCustomerInfo = async () => {
+  const loadCustomerInfo = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -66,54 +51,27 @@ const CustomerContatti = () => {
       console.error('Error loading customer summary:', error);
       toast.error('Errore nel caricamento dei dati del cliente');
     }
-  };
+  }, [id]);
 
-  const loadContatti = async () => {
+  const loadContatti = useCallback(async () => {
+    if (!id) return;
     setIsLoading(true);
     try {
-      // TODO: Implement API call to fetch customer contacts
-    console.log('Loading contatti for customer ID:', id);
-      
-    // Sample data for testing
-      const sampleData: Contatto[] = [
-        { 
-       id: '1', 
-          nome: 'Mario', 
-      cognome: 'Rossi', 
-   ruolo: 'Amministratore Delegato', 
-          telefono: '02-12345678',
-          cellulare: '333-1234567',
-   email: 'mario.rossi@azienda.it',
-          note: 'Decisore principale'
-        },
-     { 
-   id: '2', 
-    nome: 'Laura', 
-     cognome: 'Bianchi', 
-   ruolo: 'Responsabile Acquisti', 
-     telefono: '02-12345679',
-          cellulare: '333-7654321',
-     email: 'laura.bianchi@azienda.it',
-       note: 'Contattare per ordini'
-  },
-     { 
-   id: '3', 
-        nome: 'Giuseppe', 
-    cognome: 'Verdi', 
-    ruolo: 'Responsabile Tecnico', 
-   telefono: '02-12345680',
-          cellulare: '333-9876543',
-  email: 'giuseppe.verdi@azienda.it',
- note: 'Per assistenza tecnica'
- },
-  ];
-      setContatti(sampleData);
+      // Chiamata API per recuperare i contatti del cliente
+      const referencesData = await customersService.getReferencesByCustomerId(id);
+      setContatti(referencesData);
     } catch (error) {
-    console.error('Error loading contatti:', error);
-  } finally {
+      console.error('Error loading contatti:', error);
+      toast.error('Errore nel caricamento dei contatti');
+    } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadCustomerInfo();
+    loadContatti();
+  }, [loadCustomerInfo, loadContatti]);
 
   const handleAddContatto = () => {
     navigate(`/customers/${id}/contatti/create`);
@@ -125,30 +83,25 @@ const CustomerContatti = () => {
 
   const columns: GridColDef[] = [
     {
-      field: 'nome',
+      field: 'firstname',
       headerName: 'Nome',
       width: 130,
     },
     {
-      field: 'cognome',
+      field: 'lastname',
       headerName: 'Cognome',
       width: 130,
     },
     {
-      field: 'ruolo',
-      headerName: 'Ruolo',
-flex: 1,
+      field: 'description',
+      headerName: 'Descrizione',
+      flex: 1,
       minWidth: 180,
     },
     {
-      field: 'telefono',
+      field: 'telephonenumber',
       headerName: 'Telefono',
-      width: 130,
-    },
-    {
-      field: 'cellulare',
-      headerName: 'Cellulare',
-      width: 130,
+      width: 150,
     },
     {
       field: 'email',
@@ -157,29 +110,23 @@ flex: 1,
       minWidth: 200,
     },
     {
-      field: 'note',
-   headerName: 'Note',
-      flex: 1.5,
-  minWidth: 200,
-    },
-    {
       field: 'actions',
       headerName: 'Azioni',
       width: 80,
       sortable: false,
-   filterable: false,
+      filterable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-     <IconButton
-      size="small"
-  onClick={() => handleEditContatto(params.row.id)}
-    sx={{
-  color: '#93c54b',
-   '&:hover': { backgroundColor: 'rgba(147, 197, 75, 0.1)' }
-          }}
-  >
-        <EditIcon fontSize="small" />
-    </IconButton>
+          <IconButton
+            size="small"
+            onClick={() => handleEditContatto(params.row.id)}
+            sx={{
+              color: '#93c54b',
+              '&:hover': { backgroundColor: 'rgba(147, 197, 75, 0.1)' }
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
         </Box>
       ),
     },
