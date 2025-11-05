@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Container,
@@ -19,6 +19,7 @@ import {
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import customersService from '../services/customers.service';
+import type { Destination } from '../services/customers.service';
 import { toast } from 'react-toastify';
 
 interface CustomerInfo {
@@ -28,30 +29,14 @@ interface CustomerInfo {
   provincia: string;
 }
 
-interface Sede {
-  id: string;
-  denominazione: string;
-  indirizzo: string;
-  citta: string;
-  provincia: string;
-  cap: string;
-  telefono: string;
-  email: string;
-}
-
 const CustomerSedi = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
-  const [sedi, setSedi] = useState<Sede[]>([]);
+  const [sedi, setSedi] = useState<Destination[]>([]);
 
-  useEffect(() => {
-    loadCustomerInfo();
-    loadSedi();
-  }, [id]);
-
-  const loadCustomerInfo = async () => {
+  const loadCustomerInfo = useCallback(async () => {
     if (!id) return;
     try {
       const summary = await customersService.getCustomerSummary(id);
@@ -65,54 +50,27 @@ const CustomerSedi = () => {
       console.error('Error loading customer summary:', error);
       toast.error('Errore nel caricamento dei dati del cliente');
     }
-  };
+  }, [id]);
 
-  const loadSedi = async () => {
+  const loadSedi = useCallback(async () => {
+    if (!id) return;
     setIsLoading(true);
     try {
-      // TODO: Implement API call to fetch customer locations
-      console.log('Loading sedi for customer ID:', id);
-      
-      // Sample data for testing
-      const sampleData: Sede[] = [
-        { 
-   id: '1', 
-       denominazione: 'Sede Principale', 
-       indirizzo: 'Via Roma 123', 
-          citta: 'Milano', 
-     provincia: 'MI', 
-      cap: '20100',
-   telefono: '02-12345678',
-      email: 'milano@rossi.it'
-        },
-        { 
-          id: '2', 
-   denominazione: 'Filiale Nord', 
-        indirizzo: 'Via Torino 45', 
-     citta: 'Bergamo', 
-     provincia: 'BG', 
- cap: '24100',
-          telefono: '035-987654',
-          email: 'bergamo@rossi.it'
-        },
-    { 
-  id: '3', 
-    denominazione: 'Magazzino', 
-          indirizzo: 'Via Industriale 78', 
-          citta: 'Brescia', 
-    provincia: 'BS', 
-          cap: '25100',
-       telefono: '030-456789',
-          email: 'magazzino@rossi.it'
-   },
-      ];
- setSedi(sampleData);
+      // Chiamata API per recuperare le sedi del cliente
+      const destinationsData = await customersService.getDestinationsByCustomerId(id);
+      setSedi(destinationsData);
     } catch (error) {
       console.error('Error loading sedi:', error);
+      toast.error('Errore nel caricamento delle sedi');
     } finally {
- setIsLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadCustomerInfo();
+    loadSedi();
+  }, [loadCustomerInfo, loadSedi]);
 
   const handleAddSede = () => {
     navigate(`/customers/${id}/sedi/create`);
@@ -124,62 +82,46 @@ const CustomerSedi = () => {
 
   const columns: GridColDef[] = [
     {
-      field: 'denominazione',
-    headerName: 'Denominazione',
-   flex: 1,
+      field: 'descr1',
+      headerName: 'Denominazione',
+      flex: 1,
       minWidth: 180,
     },
     {
-  field: 'indirizzo',
+      field: 'address',
       headerName: 'Indirizzo',
       flex: 1.5,
       minWidth: 200,
     },
     {
-field: 'citta',
-      headerName: 'Citta',
+      field: 'city',
+      headerName: 'Città',
       width: 130,
     },
     {
-  field: 'provincia',
-      headerName: 'Provincia',
-      width: 100,
+      field: 'DestinationType',
+      headerName: 'Tipo Destinazione',
+      width: 150,
       align: 'center',
-headerAlign: 'center',
-    },
-    {
-      field: 'cap',
-      headerName: 'CAP',
-  width: 80,
-    },
-    {
-      field: 'telefono',
-headerName: 'Telefono',
-    width: 130,
-    },
-    {
-      field: 'email',
-      headerName: 'Email',
-      flex: 1,
-      minWidth: 180,
+      headerAlign: 'center',
     },
     {
       field: 'actions',
       headerName: 'Azioni',
-   width: 80,
+      width: 80,
       sortable: false,
       filterable: false,
       renderCell: (params) => (
-   <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-  <IconButton
-    size="small"
- onClick={() => handleEditSede(params.row.id)}
-         sx={{
-    color: '#93c54b',
-'&:hover': { backgroundColor: 'rgba(147, 197, 75, 0.1)' }
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton
+            size="small"
+            onClick={() => handleEditSede(params.row.id)}
+            sx={{
+              color: '#93c54b',
+              '&:hover': { backgroundColor: 'rgba(147, 197, 75, 0.1)' }
             }}
           >
-        <EditIcon fontSize="small" />
+            <EditIcon fontSize="small" />
           </IconButton>
         </Box>
       ),

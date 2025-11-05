@@ -45,6 +45,23 @@ export interface CustomerListResponse {
   total: number;
 }
 
+export interface Destination {
+  id: string;
+  descr1: string;
+  address: string;
+  city: string;
+  destinationtype: string;
+}
+
+export interface Reference {
+  id: string;
+  description: string;
+  lastname: string;
+  firstname: string;
+  email: string;
+  telephonenumber: string;
+}
+
 class CustomersService {
   /**
    * Get agents
@@ -167,6 +184,20 @@ class CustomersService {
   return apiService.get<Customer[]>(this.basePath, {
       params: { q: query },
     });
+  }
+
+  /**
+   * Get customer destinations/sedi by customer ID
+   */
+  async getDestinationsByCustomerId(customerId: string): Promise<Destination[]> {
+    return apiService.get<Destination[]>(`/Destinations/FetchByCustomer/${customerId}`);
+  }
+
+  /**
+   * Get customer references/contatti by customer ID
+   */
+  async getReferencesByCustomerId(customerId: string): Promise<Reference[]> {
+    return apiService.get<Reference[]>(`/references/FetchByCustomer/${customerId}`);
   }
 }
 
