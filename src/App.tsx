@@ -13,6 +13,10 @@ import MezzoCreate from './pages/MezzoCreate';
 import SedeCreate from './pages/SedeCreate';
 import ContattoCreate from './pages/ContattoCreate';
 import Summary from './pages/Summary';
+import ConfirmContacts from './pages/ConfirmContacts';
+import ConfirmDestinations from './pages/ConfirmDestinations';
+import ContactDifferences from './pages/ContactDifferences';
+import DestinationDifferences from './pages/DestinationDifferences';
 import './App.css';
 
 // Placeholder components for now
@@ -33,6 +37,10 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/summary" element={<Summary />} />
+          <Route path="/confirm/contacts" element={<ConfirmContacts />} />
+          <Route path="/confirm/contacts/differences/:id/:confirmedId" element={<ContactDifferences />} />
+          <Route path="/confirm/destinations" element={<ConfirmDestinations />} />
+          <Route path="/confirm/destinations/differences/:id/:confirmedId" element={<DestinationDifferences />} />
           <Route path="/customers/lists" element={<CustomersList />} />
           <Route path="/customers/search" element={<CustomersSearch />} />
           <Route path="/customers/create" element={<CustomersCreate />} />

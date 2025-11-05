@@ -45,33 +45,78 @@ const Summary = () => {
     loadSummary();
   };
 
-  const renderSummaryCard = (title: string, newCount: number, modifiedCount: number) => (
-    <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
-      <Card sx={{ height: '100%', border: '1px solid #ddd' }}>
-        <CardContent>
-          <Typography variant="h6" component="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
-            {title}
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Nuovi:
+  const renderSummaryCard = (title: string, newCount: number, modifiedCount: number, modifiedClickRoute?: string, newClickRoute?: string) => {
+    // Debug log per verificare i parametri
+    console.log(`renderSummaryCard - ${title}:`, { newCount, modifiedCount, modifiedClickRoute, newClickRoute });
+    
+    const isModifiedClickable = modifiedClickRoute && modifiedCount > 0;
+    const isNewClickable = newClickRoute && newCount > 0;
+    console.log(`${title} - isModifiedClickable:`, isModifiedClickable, 'isNewClickable:', isNewClickable);
+    
+    return (
+      <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
+        <Card sx={{ height: '100%', border: '1px solid #ddd' }}>
+          <CardContent>
+            <Typography variant="h6" component="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
+              {title}
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 'bold', color: newCount > 0 ? '#f57c00' : 'inherit' }}>
-              {newCount}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="body2" color="text.secondary">
-              Modificati:
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 'bold', color: modifiedCount > 0 ? '#f57c00' : 'inherit' }}>
-              {modifiedCount}
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
-    </Box>
-  );
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Nuovi:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontWeight: 'bold', 
+                  color: newCount > 0 ? '#f57c00' : 'inherit',
+                  cursor: isNewClickable ? 'pointer' : 'default',
+                  textDecoration: isNewClickable ? 'underline' : 'none',
+                  '&:hover': isNewClickable ? { 
+                    color: '#ef6c00' 
+                  } : {}
+                }}
+                onClick={() => {
+                  console.log(`Click su ${title} NUOVI - newCount: ${newCount}, route: ${newClickRoute}`);
+                  if (isNewClickable) {
+                    console.log(`Navigating to: ${newClickRoute}`);
+                    navigate(newClickRoute);
+                  }
+                }}
+              >
+                {newCount}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="body2" color="text.secondary">
+                Modificati:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontWeight: 'bold', 
+                  color: modifiedCount > 0 ? '#f57c00' : 'inherit',
+                  cursor: isModifiedClickable ? 'pointer' : 'default',
+                  textDecoration: isModifiedClickable ? 'underline' : 'none',
+                  '&:hover': isModifiedClickable ? { 
+                    color: '#ef6c00' 
+                  } : {}
+                }}
+                onClick={() => {
+                  console.log(`Click su ${title} MODIFICATI - modifiedCount: ${modifiedCount}, route: ${modifiedClickRoute}`);
+                  if (isModifiedClickable) {
+                    console.log(`Navigating to: ${modifiedClickRoute}`);
+                    navigate(modifiedClickRoute);
+                  }
+                }}
+              >
+                {modifiedCount}
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
@@ -178,8 +223,8 @@ const Summary = () => {
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               {renderSummaryCard('Clienti', summary.newCustomers, summary.modifiedCustomers)}
-              {renderSummaryCard('Destinazioni', summary.newDestinations, summary.modifiedDestinations)}
-              {renderSummaryCard('Contatti', summary.newReferences, summary.modifiedReferences)}
+              {renderSummaryCard('Destinazioni', summary.newDestinations, summary.modifiedDestinations, '/confirm/destinations', '/confirm/destinations')}
+              {renderSummaryCard('Contatti', summary.newReferences, summary.modifiedReferences, '/confirm/contacts', '/confirm/contacts')}
               {renderSummaryCard('Mezzi', summary.newItems, summary.modifiedItems)}
             </Box>
           </Box>
