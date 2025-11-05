@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Container,
@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import customersService from '../services/customers.service';
+import type { CreateReferenceRequest, UpdateReferenceRequest } from '../services/customers.service';
 
 interface CustomerInfo {
   ragsoc: string;
@@ -37,7 +38,6 @@ const ContattoCreate = () => {
   const isEditMode = !!contattoId;
   const [isBusy, setIsBusy] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Customer info
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
@@ -50,11 +50,7 @@ const ContattoCreate = () => {
   const [telefono, setTelefono] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  useEffect(() => {
-    loadCustomerInfo();
-  }, [customerId]);
-
-  const loadCustomerInfo = async () => {
+  const loadCustomerInfo = useCallback(async () => {
     if (!customerId) return;
     
     try {
@@ -71,41 +67,101 @@ const ContattoCreate = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [customerId]);
+
+  const loadContattoData = useCallback(async () => {
+    if (!contattoId) return;
+    
+    try {
+      const contattoData = await customersService.getReferenceById(contattoId);
+      setNome(contattoData.firstName || '');
+      setCognome(contattoData.lastName || '');
+      setEmail(contattoData.email || '');
+      setDescrizione(contattoData.description || '');
+      setTelefono(contattoData.telephoneNumber || '');
+    } catch (error) {
+      console.error('Error loading contatto data:', error);
+      toast.error('Errore nel caricamento dei dati del contatto');
+    }
+  }, [contattoId]);
+
+  useEffect(() => {
+    loadCustomerInfo();
+    if (isEditMode) {
+      loadContattoData();
+    }
+  }, [loadCustomerInfo, isEditMode, loadContattoData]);
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateTelefono = (telefono: string): boolean => {
+    return !isNaN(Number(telefono));
   };
 
   const handleSave = async () => {
-    // Validation
-    if (!nome && !cognome) {
-      toast.warning('I campi nome e cognome sono obbligatori.');
-return;
- }
+    // Validation - Nome e Cognome obbligatori
+    if (!nome.trim() && !cognome.trim()) {
+      toast.warning('Almeno uno tra Nome e Cognome deve essere compilato.');
+      return;
+    }
+
+    // Validation email se presente
+    if (email && !validateEmail(email)) {
+      toast.warning('Il campo Email non è corretto.');
+      return;
+    }
+
+    // Validation telefono se presente
+    if (telefono && !validateTelefono(telefono)) {
+      toast.warning('Il campo Telefono può contenere solo numeri.');
+      return;
+    }
 
     setIsBusy(true);
     try {
-      // TODO: Implement API call to create contatto
-      console.log('Creating contatto for customer:', customerId);
-      
-  const contattoData = {
-        id: 0,
-   customerId: customerId,
-    customerDescription: descrizione,
-firstname: nome,
-        lastname: cognome,
-   email: email,
-description: descrizione,
-        telephone: telefono,
- };
-      
-  console.log('Contatto data:', contattoData);
+      if (isEditMode) {
+        // Preparazione dati per l'aggiornamento
+        const updateData: UpdateReferenceRequest = {
+          id: parseInt(contattoId || '0'),
+          customerId: customerId || '',
+          customerDescription: '',
+          firstName: nome.trim(),
+          lastName: cognome.trim(),
+          email: email.trim(),
+          description: descrizione.trim(),
+          telephoneNumber: telefono.trim(),
+        };
+        
+        console.log('Update contatto data to be sent:', updateData);
+        await customersService.updateReference(updateData);
+      } else {
+        // Preparazione dati per la creazione
+        const contattoData: CreateReferenceRequest = {
+          id: 0,
+          customerId: customerId || '',
+          customerDescription: '',
+          firstName: nome.trim(),
+          lastName: cognome.trim(),
+          email: email.trim(),
+          description: descrizione.trim(),
+          telephoneNumber: telefono.trim(),
+        };
+        
+        console.log('Create contatto data to be sent:', contattoData);
+        await customersService.createReference(contattoData);
+      }
 
       const successMessage = isEditMode ? 'Contatto aggiornato con successo!' : 'Contatto creato con successo!';
       toast.success(successMessage);
       navigate(`/customers/${customerId}/contatti`);
     } catch (error) {
-      console.error('Error creating contatto:', error);
- const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del contatto' : 'Errore nella creazione del contatto';
+      console.error('Error saving contatto:', error);
+      const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del contatto' : 'Errore nella creazione del contatto';
       toast.error(errorMessage);
- } finally {
+    } finally {
       setIsBusy(false);
     }
   };
@@ -115,20 +171,20 @@ description: descrizione,
   };
 
   const handleDeleteConfirm = async () => {
+    if (!contattoId) return;
+    
     setIsBusy(true);
-  setDeleteDialogOpen(false);
+    setDeleteDialogOpen(false);
     
     try {
-      // TODO: Implement API call to delete contatto
-      console.log('Deleting contatto:', contattoId);
-      
-   toast.success('Contatto eliminato con successo!');
+      await customersService.deleteReference(contattoId);
+      toast.success('Contatto eliminato con successo!');
       navigate(`/customers/${customerId}/contatti`);
     } catch (error) {
       console.error('Error deleting contatto:', error);
       toast.error('Errore nell\'eliminazione del contatto');
     } finally {
- setIsBusy(false);
+      setIsBusy(false);
     }
   };
 
@@ -212,27 +268,25 @@ backgroundColor: '#7db33c',
 
       {/* Form */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-     {/* Nome e Cognome - Row 1 */}
+        {/* Nome e Cognome - Row 1 */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-    <TextField
-    variant="standard"
- required
-            label="Nome *"
- value={nome}
-     onChange={(e) => setNome(e.target.value)}
-         sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-      />
           <TextField
             variant="standard"
-            required
-            label="Cognome *"
-       value={cognome}
- onChange={(e) => setCognome(e.target.value)}
+            label="Nome *"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
             sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-   />
-        </Box>
-
-        {/* Email e Descrizione - Row 2 */}
+            helperText="Almeno uno tra Nome e Cognome è obbligatorio"
+          />
+          <TextField
+            variant="standard"
+            label="Cognome *"
+            value={cognome}
+            onChange={(e) => setCognome(e.target.value)}
+            sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+            helperText="Almeno uno tra Nome e Cognome è obbligatorio"
+          />
+        </Box>        {/* Email e Descrizione - Row 2 */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
           <TextField
             variant="standard"

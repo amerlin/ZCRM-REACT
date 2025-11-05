@@ -46,20 +46,95 @@ export interface CustomerListResponse {
 }
 
 export interface Destination {
-  id: string;
+  id: number;
+  description: string;
+  address: string | null;
+  city: string;
+  typeId: number;
+  typeDescription: string;
+}
+
+export interface DestinationDetail {
+  id: number;
   descr1: string;
+  descr2: string;
   address: string;
   city: string;
-  destinationtype: string;
+  email: string;
+  telephoneNumber: string;
+  mobileNumber: string;
+  destinationTypeId: number;
+  destinationTypeDescription: string;
+  personReference: string;
+  county: string;
 }
 
 export interface Reference {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  description: string;
+  telephoneNumber: string;
+}
+
+export interface DestinationType {
   id: string;
   description: string;
-  lastname: string;
-  firstname: string;
+}
+
+export interface CreateDestinationRequest {
+  id: number;
+  customerId: string;
+  customerDescription: string;
+  descr1: string;
+  descr2: string;
+  address: string;
+  city: string;
   email: string;
   telephonenumber: string;
+  mobilenumber: string;
+  county: string;
+  personreference: string;
+  destinationtype: string;
+}
+
+export interface CreateReferenceRequest {
+  id: number;
+  customerId: string;
+  customerDescription: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  description: string;
+  telephoneNumber: string;
+}
+
+export interface UpdateDestinationRequest {
+  id: number;
+  customerId: string;
+  customerDescription: string;
+  descr1: string;
+  descr2: string;
+  address: string;
+  city: string;
+  email: string;
+  telephonenumber: string;
+  mobilenumber: string;
+  county: string;
+  personreference: string;
+  destinationtype: string;
+}
+
+export interface UpdateReferenceRequest {
+  id: number;
+  customerId: string;
+  customerDescription: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  description: string;
+  telephoneNumber: string;
 }
 
 class CustomersService {
@@ -198,6 +273,69 @@ class CustomersService {
    */
   async getReferencesByCustomerId(customerId: string): Promise<Reference[]> {
     return apiService.get<Reference[]>(`/references/FetchByCustomer/${customerId}`);
+  }
+
+  /**
+   * Get destination types
+   */
+  async getDestinationTypes(): Promise<DestinationType[]> {
+    return apiService.get<DestinationType[]>(`/TypeDestination/GetDestinationTypes`);
+  }
+
+  /**
+   * Create new destination/sede
+   */
+  async createDestination(destinationData: CreateDestinationRequest): Promise<void> {
+    return apiService.post<void>(`/Destinations/Create`, destinationData);
+  }
+
+  /**
+   * Create new reference/contatto
+   */
+  async createReference(referenceData: CreateReferenceRequest): Promise<void> {
+    return apiService.post<void>(`/references/create`, referenceData);
+  }
+
+  /**
+   * Get destination/sede by ID
+   */
+  async getDestinationById(destinationId: string): Promise<DestinationDetail> {
+    return apiService.get<DestinationDetail>(`/Destinations/FetchById/${destinationId}`);
+  }
+
+  /**
+   * Update destination/sede
+   */
+  async updateDestination(destinationData: UpdateDestinationRequest): Promise<void> {
+    return apiService.put<void>(`/Destinations/Update`, destinationData);
+  }
+
+  /**
+   * Delete destination/sede
+   */
+  async deleteDestination(destinationId: string): Promise<void> {
+    return apiService.delete<void>(`/Destinations/Delete/${destinationId}`);
+  }
+
+  /**
+   * Get reference/contatto by ID
+   */
+  async getReferenceById(referenceId: string): Promise<Reference> {
+    return apiService.get<Reference>(`/references/fetchById/${referenceId}`);
+  }
+
+  /**
+   * Update reference/contatto
+   */
+  async updateReference(referenceData: UpdateReferenceRequest): Promise<void> {
+    return apiService.put<void>(`/references/update`, referenceData);
+  }
+
+  /**
+   * Delete reference/contatto
+   */
+  async deleteReference(referenceId: string): Promise<void> {
+    return apiService.delete<void>(`/references/delete/${referenceId}`);
   }
 }
 

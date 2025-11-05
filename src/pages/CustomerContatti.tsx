@@ -83,12 +83,12 @@ const CustomerContatti = () => {
 
   const columns: GridColDef[] = [
     {
-      field: 'firstname',
+      field: 'firstName',
       headerName: 'Nome',
       width: 130,
     },
     {
-      field: 'lastname',
+      field: 'lastName',
       headerName: 'Cognome',
       width: 130,
     },
@@ -99,7 +99,7 @@ const CustomerContatti = () => {
       minWidth: 180,
     },
     {
-      field: 'telephonenumber',
+      field: 'telephoneNumber',
       headerName: 'Telefono',
       width: 150,
     },
