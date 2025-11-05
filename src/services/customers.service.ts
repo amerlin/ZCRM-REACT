@@ -60,6 +60,35 @@ export interface ProcessSummary {
   modifiedItems: number;
 }
 
+export interface ConfirmReference {
+  id: string;
+  confirmedId: string; // ID del record confermato per le differenze
+  customerId: string;
+  customerName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  description: string;
+}
+
+export interface ConfirmDestination {
+  id: string;
+  confirmedId: string; // ID del record confermato per le differenze
+  customerId: string;
+  customerName: string;
+  description: string;
+  address: string;
+  city: string;
+  tipoSede: string;
+}
+
+export interface ReferenceDifferences {
+  // L'API restituisce direttamente un array di differenze
+  propName: string;
+  oldValue: string;
+  newValue: string;
+}
+
 export interface Destination {
   id: number;
   description: string;
@@ -82,6 +111,8 @@ export interface DestinationDetail {
   destinationTypeDescription: string;
   personReference: string;
   county: string;
+  isActive: boolean;
+  destinationReferenceId: number;
 }
 
 export interface Reference {
@@ -139,6 +170,8 @@ export interface UpdateDestinationRequest {
   county: string;
   personreference: string;
   destinationtype: string;
+  isActive: boolean;
+  destinationReferenceId: number;
 }
 
 export interface UpdateReferenceRequest {
@@ -198,7 +231,10 @@ class CustomersService {
    * Fetch customer by ID using FetchCustomer/ID endpoint
    */
   async fetchCustomerById(id: string): Promise<Customer> {
-    return apiService.get<Customer>(`/Customers/FetchCustomer/${id}`);
+    console.log('CustomerService: Calling /Customers/FetchCustomer/', id);
+    const result = apiService.get<Customer>(`/Customers/FetchCustomer/${id}`);
+    console.log('CustomerService: FetchCustomer API call initiated');
+    return result;
   }
   /**
    * Get customers grid
@@ -358,6 +394,74 @@ class CustomersService {
    */
   async getProcessSummary(): Promise<ProcessSummary> {
     return apiService.get<ProcessSummary>(`/process/GetSummary`);
+  }
+
+  /**
+   * Get references/contacts to confirm
+   */
+  async getConfirmReferences(): Promise<ConfirmReference[]> {
+    return apiService.get<ConfirmReference[]>(`/references/FetchNotConfirmed`);
+  }
+
+  /**
+   * Confirm reference/contact changes
+   */
+  async confirmReference(referenceId: string): Promise<void> {
+    return apiService.post<void>(`/References/Confirm/${referenceId}`, {
+      IsConfirmation: true,
+      IsActive: true
+    });
+  }
+
+  /**
+   * Dismiss reference/contact changes
+   */
+  async dismissReference(referenceId: string): Promise<void> {
+    return apiService.post<void>(`/References/Dismiss/${referenceId}`, {
+      IsConfirmation: false,
+      IsActive: false
+    });
+  }
+
+  /**
+   * Get reference differences
+   */
+  async getReferenceDifferences(referenceId: string): Promise<ReferenceDifferences[]> {
+    return apiService.get<ReferenceDifferences[]>(`/references/GetDifference/${referenceId}`);
+  }
+
+  /**
+   * Get destination differences
+   */
+  async getDestinationDifferences(destinationId: string): Promise<ReferenceDifferences[]> {
+    return apiService.get<ReferenceDifferences[]>(`/destinations/GetDifference/${destinationId}`);
+  }
+
+  /**
+   * Get destinations to confirm
+   */
+  async getConfirmDestinations(): Promise<ConfirmDestination[]> {
+    return apiService.get<ConfirmDestination[]>(`/destinations/FetchNotConfirmed`);
+  }
+
+  /**
+   * Confirm destination changes
+   */
+  async confirmDestination(destinationId: string): Promise<void> {
+    return apiService.post<void>(`/Destinations/Confirm/${destinationId}`, {
+      IsConfirmation: true,
+      IsActive: true
+    });
+  }
+
+  /**
+   * Dismiss destination changes
+   */
+  async dismissDestination(destinationId: string): Promise<void> {
+    return apiService.post<void>(`/Destinations/Dismiss/${destinationId}`, {
+      IsConfirmation: false,
+      IsActive: false
+    });
   }
 }
 
