@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import CustomerEditNavBar from '../components/CustomerEditNavBar';
-import customersService from '../services/customers.service';
+import customersService, { type CreateCustomerRequest, type UpdateCustomerRequest } from '../services/customers.service';
 
 interface Agent {
   id: string;
@@ -261,9 +261,9 @@ const CustomersCreate = () => {
     try {
       const cats = await customersService.getCustomerCategories();
       // Map API response to Category format with value = false by default
-      const mappedCategories = cats.map((cat: any) => ({
-        id: cat.id,
-        description: cat.description,
+      const mappedCategories = cats.map((catDescription: string, index: number) => ({
+        id: index.toString(),
+        description: catDescription,
         value: false,
       }));
       setCategoryList(mappedCategories);
@@ -325,18 +325,76 @@ const CustomersCreate = () => {
     }
   };
 
+  // Helper function to prepare customer data for API calls
+  const prepareCustomerData = (customerId?: string): CreateCustomerRequest => {
+    return {
+      id: customerId ? parseInt(customerId) : 0,
+      erpNumber: '', // TODO: Map from appropriate field
+      descr1: ragsoc || '',
+      descr2: '', // TODO: Add second description field if needed
+      zipCode: cap || '',
+      city: citta || '',
+      country: 'IT',
+      address: indirizzo || '',
+      telephoneNumber: telefono || '',
+      mobileNumber: cellulare || '',
+      extraNumber: altroTelefono || '',
+      email: email || '',
+      emailPec: emailPec || '',
+      personReference: riferimento || '',
+      piva: piva || '',
+      codFis: '', // TODO: Add codice fiscale field
+      provinceId: parseInt(provincia) || 0,
+      counties: '',
+      privacyId: parseInt(privacy) || 0,
+      privacyPolicy: '',
+      agentId: parseInt(agente) || 0,
+      agentShortDescription: '',
+      preferredColturaId: parseInt(colturaPreferita) || 0,
+      isActiveCustomer: isActiveCustomer,
+      isSenderEmailEnabled: isSenderEmailEnabled,
+      customerTypeIds: [], // TODO: Map from customer type checkboxes
+      customerCategories: categoryList.filter(cat => cat.value).map(cat => ({
+        customerCategoryTypeId: parseInt(cat.id),
+        value: cat.value
+      })),
+      allevamentoTypes: tipoAllevamento ? [{
+        allevamentoTypeId: parseInt(tipoAllevamento),
+        numeroCapi: parseInt(numeroCapi) || 0
+      }] : [],
+      colturaTypes: colturaItemList.map(col => ({
+        colturaTypeId: parseInt(col.colturaId),
+        ettariProprieta: parseFloat(col.ettariProprieta) || 0,
+        ettariAffitto: parseFloat(col.ettariInAffitto) || 0,
+        ettariColtivati: parseFloat(col.ettariColtivati) || 0,
+        isBio: col.colturaBiologica
+      })),
+      referenceRecordId: 0,
+      isConfirmed: true,
+      isActive: true,
+      haveModifiedDestinations: false,
+      username: 'current-user', // TODO: Get from auth context
+      customerType: 0, // TODO: Map appropriately
+      customerTypeDescr: ''
+    };
+  };
+
   const handleSave = async () => {
     setIsBusy(true);
     try {
       if (isEditMode) {
-        // TODO: Implement update API call
+        // Update existing customer
         console.log('Updating customer ID:', id);
-        // await updateCustomer(id, formData);
+        const updateData = prepareCustomerData(id);
+        console.log('Update customer data:', updateData);
+        await customersService.update(updateData as UpdateCustomerRequest);
         toast.success('Cliente aggiornato con successo!');
       } else {
-        // TODO: Implement create API call
+        // Create new customer
         console.log('Creating new customer...');
-    // await createCustomer(formData);
+        const createData = prepareCustomerData();
+        console.log('Create customer data:', createData);
+        await customersService.create(createData);
         toast.success('Cliente creato con successo!');
       }
       navigate('/customers/lists');

@@ -40,6 +40,60 @@ export interface Customer {
   }>;
 }
 
+export interface CreateCustomerRequest {
+  id: number;
+  erpNumber: string;
+  descr1: string;
+  descr2: string;
+  zipCode: string;
+  city: string;
+  country: string;
+  address: string;
+  telephoneNumber: string;
+  mobileNumber: string;
+  extraNumber: string;
+  email: string;
+  emailPec: string;
+  personReference: string;
+  piva: string;
+  codFis: string;
+  provinceId: number;
+  counties: string;
+  privacyId: number;
+  privacyPolicy: string;
+  agentId: number;
+  agentShortDescription: string;
+  preferredColturaId: number;
+  isActiveCustomer: boolean;
+  isSenderEmailEnabled: boolean;
+  customerTypeIds: number[];
+  customerCategories: Array<{
+    customerCategoryTypeId: number;
+    value: boolean;
+  }>;
+  allevamentoTypes: Array<{
+    allevamentoTypeId: number;
+    numeroCapi: number;
+  }>;
+  colturaTypes: Array<{
+    colturaTypeId: number;
+    ettariProprieta: number;
+    ettariAffitto: number;
+    ettariColtivati: number;
+    isBio: boolean;
+  }>;
+  referenceRecordId: number;
+  isConfirmed: boolean;
+  isActive: boolean;
+  haveModifiedDestinations: boolean;
+  username: string;
+  customerType: number;
+  customerTypeDescr: string;
+}
+
+// Update request uses the same structure as create request
+export type UpdateCustomerRequest = CreateCustomerRequest;
+
 export interface CustomerListResponse {
   customers: Customer[];
   total: number;
@@ -268,15 +322,15 @@ class CustomersService {
   /**
    * Create new customer
    */
-  async create(customer: Partial<Customer>): Promise<Customer> {
-    return apiService.post<Customer>(this.basePath, customer);
-}
+  async create(customerData: CreateCustomerRequest): Promise<Customer> {
+    return apiService.post<Customer>(`${this.basePath}/Create`, customerData);
+  }
 
   /**
    * Update customer
    */
-  async update(id: string, customer: Partial<Customer>): Promise<Customer> {
-    return apiService.put<Customer>(`${this.basePath}/${id}`, customer);
+  async update(customerData: UpdateCustomerRequest): Promise<Customer> {
+    return apiService.put<Customer>(`${this.basePath}/Update`, customerData);
   }
 
   /**

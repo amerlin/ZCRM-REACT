@@ -19,9 +19,16 @@ import ContactDifferences from './pages/ContactDifferences';
 import DestinationDifferences from './pages/DestinationDifferences';
 import './App.css';
 
+// Import used machinery pages
+import Used from './pages/Used';
+import UsedTractorsCategories from './pages/UsedTractorsCategories';
+import UsedTractors from './pages/UsedTractors';
+import UsedHarvesters from './pages/UsedHarvesters';
+import UsedEquipment from './pages/UsedEquipment';
+import UsedConstruction from './pages/UsedConstruction';
+
 // Placeholder components for now
 const ItemsSearch = () => <div className="container"><h1>Ricerca Avanzata Mezzi - In sviluppo</h1></div>;
-const Used = () => <div className="container"><h1>Usato - In sviluppo</h1></div>;
 const Comunications = () => <div className="container"><h1>Comunicazioni - In sviluppo</h1></div>;
 const AddressBook = () => <div className="container"><h1>Numeri utili - In sviluppo</h1></div>;
 const DocumentsList = () => <div className="container"><h1>Ordini Attivi - In sviluppo</h1></div>;
@@ -56,6 +63,12 @@ function App() {
           <Route path="/customers/:customerId/contatti/:contattoId/edit" element={<ContattoCreate />} />
           <Route path="/items/search" element={<ItemsSearch />} />
           <Route path="/used" element={<Used />} />
+          <Route path="/used/tractors" element={<UsedTractorsCategories />} />
+          <Route path="/used/tractors/wheeled" element={<UsedTractors />} />
+          <Route path="/used/tractors/tracked" element={<UsedTractors />} />
+          <Route path="/used/harvesters" element={<UsedHarvesters />} />
+          <Route path="/used/equipment" element={<UsedEquipment />} />
+          <Route path="/used/construction" element={<UsedConstruction />} />
           <Route path="/comunications" element={<Comunications />} />
           <Route path="/addressbook" element={<AddressBook />} />
           <Route path="/documents/lists" element={<DocumentsList />} />
