@@ -5,39 +5,54 @@ import {
   Button,
   Box,
   Divider,
+  IconButton,
 } from '@mui/material';
 import {
-  ListAlt as ListAltIcon,
+  ChevronLeft as ChevronLeftIcon,
+  Settings as EquipmentIcon,
 } from '@mui/icons-material';
 
-const Home = () => {
+const UsedEquipment = () => {
   const navigate = useNavigate();
 
-  // TODO: TEMPORARILY DISABLED - Add authentication check when structure is complete
-  // useEffect(() => {
-  //   if (!isAuthenticated) {
-  //     navigate('/sign-in');
-  //   }
-  // }, [isAuthenticated, navigate]);
-
   const menuButtons = [
-    { label: 'Clienti', path: '/customers/lists' },
-    { label: 'Ricerca Avanzata Clienti', path: '/customers/search' },
-    { label: 'Ricerca Avanzata Mezzi', path: '/items/search' },
-    { label: 'Usato', path: '/used' },
-    { label: 'Comunicazioni', path: '/comunications' },
-    { label: 'Numeri utili', path: '/addressbook' },
-    /*{ label: 'Ordini Attivi', path: '/documents/lists' },*/
+    { label: 'Aggiungi Attrezzatura', path: '/used/equipment/create' },
+    { label: 'Visualizza Elenco', path: '/used/equipment/list' },
+    { label: 'Ricerca Avanzata', path: '/used/equipment/search' },
+    { label: 'Statistiche', path: '/used/equipment/stats' },
+    { label: 'Importa Dati', path: '/used/equipment/import' },
+    { label: 'Esporta Dati', path: '/used/equipment/export' },
   ];
+
+  const handleGoBack = () => {
+    navigate('/used');
+  };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <ListAltIcon sx={{ mr: 1, fontSize: 32 }} />
-        <Typography variant="h4" component="h2" sx={{ fontWeight: 400 }}>
-          Menu principale
-        </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <EquipmentIcon sx={{ mr: 1, fontSize: 32 }} />
+          <Typography variant="h4" component="h2" sx={{ fontWeight: 400 }}>
+            Gestione Attrezzature Usate
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={handleGoBack}
+          sx={{
+            backgroundColor: '#93c54b',
+            color: 'white',
+            width: '30px',
+            height: '30px',
+            borderRadius: 1,
+            '&:hover': {
+              backgroundColor: '#7db33c',
+            },
+          }}
+        >
+          <ChevronLeftIcon sx={{ fontSize: 20 }} />
+        </IconButton>
       </Box>
 
       <Divider sx={{ mb: 3 }} />
@@ -81,4 +96,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default UsedEquipment;
