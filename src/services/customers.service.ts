@@ -99,6 +99,125 @@ export interface CustomerListResponse {
   total: number;
 }
 
+export interface CustomerItem {
+  id: number;
+  brand: string;
+  model: string;
+  serialNumber: string;
+  description: string;
+  typologyId: number;
+  typologyDescription: string;
+}
+
+export interface ItemType {
+  id: number;
+  description: string;
+  isVisible: boolean;
+  templateId: number;
+}
+
+export interface ItemBrand {
+  id: number;
+  description: string;
+  orderIndex: number;
+}
+
+export interface ItemYear {
+  id: number;
+  description: string;
+}
+
+export interface CustomerItemDetail {
+  id: number;
+  templateId: string;
+  typeId: number;
+  customerId: number;
+  referenceRecordId: number;
+  brandId: number;
+  typeDescription: string;
+  brandDescription: string;
+  description: string;
+  model: string;
+  year: number;
+  yearCreated: number;
+  matricola: string;
+  isActive: boolean;
+  telematics: boolean;
+  trattore: boolean;
+  telescopico: boolean;
+  hour: number;
+  hourAtDay: string;
+  rotorHour: number;
+  rotorHourAtDate: string;
+  battHour: number;
+  battHourAtDate: string;
+  motorHour: number;
+  motorHourAtDate: string;
+}
+
+export interface CreateCustomerItemRequest {
+  id: number;
+  templateId: number;
+  typeId: number;
+  customerId: number;
+  referenceRecordId: number;
+  brandId: number;
+  description: string;
+  model: string;
+  year: number;
+  yearCreated: number;
+  matricola: string;
+  isActive: boolean;
+  telematics: boolean;
+  trattore: boolean;
+  telescopico: boolean;
+  hour: number;
+  hourAtDay: string; // ISO date string
+  rotorHour: number;
+  rotorHourAtDate: string; // ISO date string
+  battHour: number;
+  battHourAtDate: string; // ISO date string
+  motorHour: number;
+  motorHourAtDate: string; // ISO date string
+}
+
+export interface CheckMatricolaRequest {
+  customerId: number;
+  itemsId: number;
+  matricola: string;
+}
+
+export interface CheckMatricolaResponse {
+  customerId: number;
+  itemsId: number;
+  customerDescription: string;
+}
+
+export interface Agent {
+  id: number;
+  shortDescription: string;
+  description: string;
+  email: string;
+  userId: string;
+}
+
+export interface Province {
+  id: number;
+  shortDescription: string;
+  fullDescription: string;
+}
+
+export interface CustomerCategory {
+  id: number;
+  description: string;
+}
+
+export interface CustomerType {
+  id: number;
+  name: string;
+  shortName: string;
+}
+
 export interface ProcessSummary {
   totalNewElements: number;
   totalModifiedElements: number;
@@ -241,17 +360,24 @@ export interface UpdateReferenceRequest {
 
 class CustomersService {
   /**
-   * Get agents
+   * Get provinces
    */
-  async getAgents(): Promise<{id: string; description: string}[]> {
-    return apiService.get<{id: string; description: string}[]>(`/Agents/GetAgents`);
+  async getProvinces(): Promise<Province[]> {
+    return apiService.get<Province[]>('/Province/GetProvinces');
   }
 
   /**
-   * Get provinces
+   * Get customer categories
    */
-  async getProvinces(): Promise<{id: string; shortDescription: string; fullDescription: string}[]> {
-    return apiService.get<{id: string; shortDescription: string; fullDescription: string}[]>(`/Province/GetProvinces`);
+  async getCustomerCategories(): Promise<CustomerCategory[]> {
+    return apiService.get<CustomerCategory[]>('/TypeCategory/GetCustomerCategories');
+  }
+
+  /**
+   * Get customer types
+   */
+  async getCustomerTypes(): Promise<CustomerType[]> {
+    return apiService.get<CustomerType[]>('/TypeCustomer/GetCustomerTypes');
   }
 
   /**
@@ -275,12 +401,6 @@ class CustomersService {
     return apiService.get<{id: string; description: string}[]>(`/TypeAllevamento/GetAllevamentoTypes`);
   }
 
-  /**
-   * Get customer categories
-   */
-  async getCustomerCategories(): Promise<string[]> {
-    return apiService.get<string[]>(`/TypeCategory/GetCustomerCategories`);
-  }
   /**
    * Fetch customer by ID using FetchCustomer/ID endpoint
    */
@@ -378,6 +498,67 @@ class CustomersService {
    */
   async getReferencesByCustomerId(customerId: string): Promise<Reference[]> {
     return apiService.get<Reference[]>(`/references/FetchByCustomer/${customerId}`);
+  }
+
+  /**
+   * Get customer items/mezzi by customer ID
+   */
+  async getCustomerItemsByCustomerId(customerId: string): Promise<CustomerItem[]> {
+    return apiService.get<CustomerItem[]>(`/CustomerItems/FetchByCustomer/${customerId}`);
+  }
+
+  /**
+   * Get item types for mezzi
+   */
+  async getItemTypes(): Promise<ItemType[]> {
+    return apiService.get<ItemType[]>(`/CustomerItemUtility/GetItemTypes`);
+  }
+
+  /**
+   * Get item brands for mezzi
+   */
+  async getItemBrands(): Promise<ItemBrand[]> {
+    return apiService.get<ItemBrand[]>(`/CustomerItemUtility/GetItemBrands`);
+  }
+
+  /**
+   * Get years for mezzi
+   */
+  async getItemYears(): Promise<ItemYear[]> {
+    return apiService.get<ItemYear[]>(`/CustomerItemUtility/GetAnno`);
+  }
+
+  /**
+   * Create new customer item/mezzo
+   */
+  async createCustomerItem(itemData: CreateCustomerItemRequest): Promise<void> {
+    return apiService.post<void>(`/CustomerItems/Create`, itemData);
+  }
+
+  /**
+   * Get customer item details by ID
+   */
+  async getCustomerItemById(itemId: string): Promise<CustomerItemDetail> {
+    return apiService.get<CustomerItemDetail>(`/CustomerItems/FetchById/${itemId}`);
+  }
+
+  /**
+   * Check matricola for duplicates
+   */
+  async checkMatricola(customerId: number, matricola: string): Promise<CheckMatricolaResponse[]> {
+    const payload: CheckMatricolaRequest = {
+      customerId,
+      itemsId: 0,
+      matricola
+    };
+    return apiService.post<CheckMatricolaResponse[]>('/CustomerItemUtility/CheckMatricola', payload);
+  }
+
+  /**
+   * Get agents list
+   */
+  async getAgents(): Promise<Agent[]> {
+    return apiService.get<Agent[]>('/Agents/GetAgents');
   }
 
   /**

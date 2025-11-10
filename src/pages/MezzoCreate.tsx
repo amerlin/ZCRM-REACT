@@ -28,7 +28,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import customersService from '../services/customers.service';
+import customersService, { type CreateCustomerItemRequest, type CustomerItemDetail, type CheckMatricolaResponse } from '../services/customers.service';
 
 interface CustomerInfo {
   ragsoc: string;
@@ -38,14 +38,16 @@ interface CustomerInfo {
 }
 
 interface Marca {
-id: string;
+  id: number;
   description: string;
+  orderIndex: number;
 }
 
 interface TipologiaMezzo {
-  id: string;
+  id: number;
   description: string;
-  templateid: string;
+  isVisible: boolean;
+  templateId: number;
 }
 
 const MezzoCreate = () => {
@@ -59,16 +61,17 @@ const MezzoCreate = () => {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
 
   // Form state - Dati principali
-  const [tipologiaMezzo, setTipologiaMezzo] = useState('');
-  const [templateId, setTemplateId] = useState('');
+  const [tipologiaMezzo, setTipologiaMezzo] = useState<number | ''>('');
+  const [templateId, setTemplateId] = useState<number | null>(null);
+
   const [trattore, setTrattore] = useState(false);
   const [telescopico, setTelescopico] = useState(false);
-  const [brandId, setBrandId] = useState('');
+  const [brandId, setBrandId] = useState<number | ''>('');
   const [modello, setModello] = useState('');
   const [matricola, setMatricola] = useState('');
   const [descrizione, setDescrizione] = useState('');
-  const [anno, setAnno] = useState('');
-  const [annoCreazione, setAnnoCreazione] = useState('');
+  const [anno, setAnno] = useState<number | ''>('');
+  const [annoCreazione, setAnnoCreazione] = useState<number | ''>('');
   const [telematics, setTelematics] = useState(false);
 
   // Ore - Trattrici (templateId 1)
@@ -92,6 +95,7 @@ const MezzoCreate = () => {
   // Dropdown lists
   const [tipologiaMezzoList, setTipologiaMezzoList] = useState<TipologiaMezzo[]>([]);
   const [marcaList, setMarcaList] = useState<Marca[]>([]);
+  const [annoList, setAnnoList] = useState<Array<{ id: number; description: string }>>([]);
   const [annoProduzioneList, setAnnoProduzioneList] = useState<Array<{ id: number; description: string }>>([]);
 
   // Note: isDeleteDialogOpen duplicate removed - using deleteDialogOpen instead
@@ -100,8 +104,9 @@ const MezzoCreate = () => {
     loadCustomerInfo();
     loadTipologiaMezzoList();
     loadMarcaList();
+    loadAnnoList();
     loadAnnoProduzioneList();
-    
+
     // If in edit mode, load mezzo data
     if (isEditMode && mezzoId) {
       loadMezzoData(mezzoId);
@@ -110,7 +115,7 @@ const MezzoCreate = () => {
 
   const loadCustomerInfo = async () => {
     if (!customerId) return;
-    
+
     try {
       const summary = await customersService.getCustomerSummary(customerId);
       setCustomerInfo({
@@ -129,105 +134,204 @@ const MezzoCreate = () => {
 
   const loadTipologiaMezzoList = async () => {
     try {
-      // TODO: Implement API call
-      console.log('Loading tipologia mezzo list...');
-      
-      // Sample data
-      setTipologiaMezzoList([
-        { id: '1', description: 'Trattore', templateid: '1' },
-        { id: '2', description: 'Mietitrebbia', templateid: '2' },
-        { id: '3', description: 'Attrezzatura', templateid: '3' },
-    { id: '4', description: 'Motocoltivatore', templateid: '1' },
-      ]);
+      const itemTypes = await customersService.getItemTypes();
+      console.log('ItemTypes from API:', itemTypes);
+      // Filtra solo i tipi visibili
+      const visibleTypes = itemTypes.filter(type => type.isVisible);
+      console.log('Visible types with templateId:', visibleTypes.map(t => ({ id: t.id, description: t.description, templateId: t.templateId })));
+      setTipologiaMezzoList(visibleTypes);
     } catch (error) {
       console.error('Error loading tipologia mezzo list:', error);
+      toast.error('Errore nel caricamento delle tipologie mezzo');
     }
   };
 
   const loadMarcaList = async () => {
     try {
-      // TODO: Implement API call
-      console.log('Loading marca list...');
-      
-      // Sample data
-      setMarcaList([
-        { id: '1', description: 'John Deere' },
-     { id: '2', description: 'New Holland' },
-  { id: '3', description: 'Claas' },
-{ id: '4', description: 'Fendt' },
-        { id: '5', description: 'Massey Ferguson' },
-      ]);
- } catch (error) {
+      const itemBrands = await customersService.getItemBrands();
+      // Ordina per orderIndex
+      const sortedBrands = itemBrands.sort((a, b) => a.orderIndex - b.orderIndex);
+      setMarcaList(sortedBrands);
+    } catch (error) {
       console.error('Error loading marca list:', error);
+      toast.error('Errore nel caricamento delle marche');
     }
   };
 
-  const loadAnnoProduzioneList = () => {
-    const anni: Array<{ id: number; description: string }> = [];
-    for (let i = 1980; i < 2026; i++) {
-      anni.push({ id: i, description: i.toString() });
+  const loadAnnoList = async () => {
+    try {
+      const itemYears = await customersService.getItemYears();
+      setAnnoList(itemYears);
+    } catch (error) {
+      console.error('Error loading anni list:', error);
+      toast.error('Errore nel caricamento degli anni');
     }
-    anni.push({ id: -1, description: 'N.D' });
-    setAnnoProduzioneList(anni);
+  };
+
+  const loadAnnoProduzioneList = async () => {
+    try {
+      const itemYears = await customersService.getItemYears();
+      // Per l'anno di produzione aggiungiamo anche l'opzione "N.D"
+      const yearsWithND = [...itemYears, { id: -1, description: 'N.D' }];
+      setAnnoProduzioneList(yearsWithND);
+    } catch (error) {
+      console.error('Error loading anni produzione list:', error);
+      toast.error('Errore nel caricamento degli anni di produzione');
+    }
   };
 
   const loadMezzoData = async (id: string) => {
- try {
-      // TODO: Implement API call to fetch mezzo data
-  console.log('Loading mezzo data for ID:', id);
+    try {
+      console.log('Loading mezzo data for ID:', id);
+      const mezzoData: CustomerItemDetail = await customersService.getCustomerItemById(id);
+      console.log('Loaded mezzo data:', mezzoData);
+
+      // Populate form fields with mezzo data
+      setDescrizione(mezzoData.description || '');
+      setModello(mezzoData.model || '');
+      setMatricola(mezzoData.matricola || '');
+      setTipologiaMezzo(mezzoData.typeId || '');
+      setBrandId(mezzoData.brandId || '');
+      setAnno(mezzoData.year || '');
+      setAnnoCreazione(mezzoData.yearCreated || '');
+      setTelematics(mezzoData.telematics || false);
+      setTrattore(mezzoData.trattore || false);
+      setTelescopico(mezzoData.telescopico || false);
       
-      // TODO: Populate form fields with mezzo data
-      // Example: setTipologiaMezzo(mezzoData.tipologia);
+      // Set hours data
+      setOre(mezzoData.hour?.toString() || '');
+      setOreRotore(mezzoData.rotorHour?.toString() || '');
+      setOreBattitore(mezzoData.battHour?.toString() || '');
+      setOreMotore(mezzoData.motorHour?.toString() || '');
       
+      // Set date data (convert from ISO string to YYYY-MM-DD format for date inputs)
+      if (mezzoData.hourAtDay) {
+        setDataRilievoOre(mezzoData.hourAtDay.split('T')[0]);
+      }
+      if (mezzoData.rotorHourAtDate) {
+        setDataRilievoRotore(mezzoData.rotorHourAtDate.split('T')[0]);
+      }
+      if (mezzoData.battHourAtDate) {
+        setDataRilievoBattitore(mezzoData.battHourAtDate.split('T')[0]);
+      }
+      if (mezzoData.motorHourAtDate) {
+        setDataRilievoMotore(mezzoData.motorHourAtDate.split('T')[0]);
+      }
+
+      // Set templateId based on the type
+      if (mezzoData.templateId) {
+        // Convert templateId from string to number
+        const templateIdNum = Number(mezzoData.templateId);
+        if (!isNaN(templateIdNum)) {
+          setTemplateId(templateIdNum);
+        }
+      }
+
     } catch (error) {
-console.error('Error loading mezzo data:', error);
+      console.error('Error loading mezzo data:', error);
       toast.error('Errore nel caricamento dei dati del mezzo');
     }
   };
 
   const handleTipologiaChange = (value: string) => {
-    setTipologiaMezzo(value);
-    const selected = tipologiaMezzoList.find(t => t.id === value);
+    const numValue = value === '' ? '' : parseInt(value, 10);
+    setTipologiaMezzo(numValue);
+    const selected = tipologiaMezzoList.find(t => t.id === numValue);
     if (selected) {
-      setTemplateId(selected.templateid);
+      setTemplateId(selected.templateId);
+      console.log('Selected tipologia:', selected.description, 'TemplateId:', selected.templateId);
+    } else {
+      setTemplateId(null);
     }
   };
 
   const handleVerificaMatricola = async () => {
     if (!matricola) {
-    toast.warning('Campo matricola non impostato.');
-return;
+      toast.warning('Campo matricola non impostato.');
+      return;
+    }
+
+    if (!customerId) {
+      toast.error('Customer ID non disponibile');
+      return;
     }
 
     setIsBusy(true);
     try {
-      // TODO: Implement API call
-      console.log('Checking matricola:', matricola);
-      // Note: request object removed as API is not yet implemented
-      // const request = { customerid: customerId, itemid: 0, matricola: matricola };
-
-      // Simulate API call
-      // const response = await itemsService.checkMatricola(request);
+      console.log('Checking matricola:', matricola, 'for customer:', customerId);
       
-      // Simulate valid matricola for now
-      setMatricolaValida(true);
-      setMatricolaUsata(false);
+      const response: CheckMatricolaResponse[] = await customersService.checkMatricola(
+        parseInt(customerId), 
+        matricola
+      );
+      
+      console.log('Matricola check response:', response);
+
+      if (response && response.length > 0) {
+        // Matricola is already used
+        setMatricolaValida(false);
+        setMatricolaUsata(true);
+        
+        // Create clickable toast for each customer using the matricola
+        response.forEach((item) => {
+          const toastContent = (
+            <div 
+              onClick={() => navigate(`/customers/edit/${item.customerId}`)}
+              style={{ 
+                cursor: 'pointer', 
+                padding: '8px',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.3)'
+              }}
+            >
+              <Typography variant="body2" style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                Matricola già utilizzata
+              </Typography>
+              <Typography variant="body2">
+                Cliente: {item.customerDescription}
+              </Typography>
+              <Typography variant="caption" style={{ opacity: 0.8 }}>
+                Clicca per modificare il cliente
+              </Typography>
+            </div>
+          );
+
+          toast.warning(toastContent, {
+            autoClose: 8000, // Longer duration for user to read and click
+            closeOnClick: true,
+            draggable: true,
+            style: {
+              minWidth: '350px',
+              maxWidth: '500px'
+            }
+          });
+        });
+      } else {
+        // Matricola is available
+        setMatricolaValida(true);
+        setMatricolaUsata(false);
+        toast.success('Matricola disponibile');
+      }
     } catch (error) {
       console.error('Error checking matricola:', error);
+      toast.error('Errore durante la verifica della matricola');
+      setMatricolaValida(false);
+      setMatricolaUsata(false);
     } finally {
-  setIsBusy(false);
+      setIsBusy(false);
     }
   };
 
   const handleSave = async () => {
     // Validation
     if (!tipologiaMezzo) {
-  toast.warning('Impostare la tipologia del mezzo da creare.');
+      toast.warning('Impostare la tipologia del mezzo da creare.');
       return;
     }
 
     if (!brandId) {
-  toast.warning('Il campo marca � obbligatorio.');
+      toast.warning('Il campo marca � obbligatorio.');
       return;
     }
 
@@ -237,51 +341,72 @@ return;
     }
 
     if (!descrizione) {
-  toast.warning('Il campo descrizione � obbligatorio.');
-   return;
+      toast.warning('Il campo descrizione � obbligatorio.');
+      return;
     }
 
     setIsBusy(true);
     try {
-      // TODO: Implement API call to create/update mezzo
-      const action = isEditMode ? 'Updating' : 'Creating';
-   console.log(`${action} mezzo for customer:`, customerId);
-      
-      const mezzoData = {
-        id: isEditMode ? mezzoId : 0,
-   itemtype: parseInt(templateId) - 1,
-        customerid: customerId,
-     descr: descrizione,
+      // Verifica che tipologia sia selezionata per ottenere typeId e templateId
+      const selectedTipologia = tipologiaMezzoList.find(t => t.id === tipologiaMezzo);
+      if (!selectedTipologia) {
+        toast.warning('Seleziona una tipologia di mezzo valida.');
+        return;
+      }
+
+      // Debug: verifica valori
+      console.log('Selected tipologia for save:', selectedTipologia);
+      console.log('TemplateId value:', selectedTipologia.templateId);
+
+      // Verifica che templateId sia valorizzato
+      if (selectedTipologia.templateId === undefined || selectedTipologia.templateId === null) {
+        toast.warning('Errore: templateId non valorizzato per la tipologia selezionata.');
+        return;
+      }
+
+      const mezzoData: CreateCustomerItemRequest = {
+        id: isEditMode ? (mezzoId ? parseInt(mezzoId) : 0) : 0,
+        templateId: selectedTipologia.templateId,
+        typeId: selectedTipologia.id,
+        customerId: customerId ? parseInt(customerId) : 0,
+        referenceRecordId: 0,
+        brandId: brandId || 0,
+        description: descrizione,
         model: modello,
-        brand: marcaList.find(m => m.id === brandId)?.description || '',
+        year: typeof anno === 'number' ? anno : 2024,
+        yearCreated: typeof annoCreazione === 'number' ? annoCreazione : 2024,
+        matricola: matricola,
+        isActive: true,
+        telematics: telematics,
+        trattore: trattore,
+        telescopico: telescopico,
         hour: ore ? parseInt(ore) : 0,
-        houratday: dataRilievoOre || new Date(2000, 0, 1),
-        rotorhour: oreRotore ? parseInt(oreRotore) : 0,
-  rotorhourdate: dataRilievoRotore || new Date(2000, 0, 1),
-        batthour: oreBattitore ? parseInt(oreBattitore) : 0,
-        batthouratdate: dataRilievoBattitore || new Date(2000, 0, 1),
-    motorhour: oreMotore ? parseInt(oreMotore) : 0,
-        motorhouratdate: dataRilievoMotore || new Date(2000, 0, 1),
-        year: anno ? parseInt(anno) : 2024,
-   yearcreated: annoCreazione ? parseInt(annoCreazione) : null,
-     matricola: matricola,
-  templateid: templateId,
-        typeid: tipologiaMezzo,
-   telematics: telematics,
-        brandid: brandId,
-    trattore: trattore,
-    telescopico: telescopico
+        hourAtDay: new Date().toISOString(),
+        rotorHour: oreRotore ? parseInt(oreRotore) : 0,
+        rotorHourAtDate: new Date().toISOString(),
+        battHour: oreBattitore ? parseInt(oreBattitore) : 0,
+        battHourAtDate: new Date().toISOString(),
+        motorHour: oreMotore ? parseInt(oreMotore) : 0,
+        motorHourAtDate: new Date().toISOString()
       };
-      
-   console.log('Mezzo data:', mezzoData);
+
+      console.log('Mezzo data:', mezzoData);
+
+      if (isEditMode) {
+        // TODO: Implement update API when available
+        toast.warning('Funzione di aggiornamento non ancora implementata');
+        return;
+      } else {
+        await customersService.createCustomerItem(mezzoData);
+      }
 
       const successMessage = isEditMode ? 'Mezzo aggiornato con successo!' : 'Mezzo creato con successo!';
       toast.success(successMessage);
       navigate(`/customers/${customerId}/mezzi`);
     } catch (error) {
       console.error('Error creating mezzo:', error);
-const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del mezzo' : 'Errore nella creazione del mezzo';
-    toast.error(errorMessage);
+      const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del mezzo' : 'Errore nella creazione del mezzo';
+      toast.error(errorMessage);
     } finally {
       setIsBusy(false);
     }
@@ -294,17 +419,17 @@ const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del mezzo' : 'Erro
   const handleDeleteConfirm = async () => {
     setIsBusy(true);
     setDeleteDialogOpen(false);
-    
+
     try {
-    // TODO: Implement API call to delete mezzo
-    console.log('Deleting mezzo:', mezzoId);
-      
-    toast.success('Mezzo eliminato con successo!');
+      // TODO: Implement API call to delete mezzo
+      console.log('Deleting mezzo:', mezzoId);
+
+      toast.success('Mezzo eliminato con successo!');
       navigate(`/customers/${customerId}/mezzi`);
     } catch (error) {
       console.error('Error deleting mezzo:', error);
- toast.error('Errore nell\'eliminazione del mezzo');
- } finally {
+      toast.error('Errore nell\'eliminazione del mezzo');
+    } finally {
       setIsBusy(false);
     }
   };
@@ -316,213 +441,217 @@ const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del mezzo' : 'Erro
   if (isLoading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
-     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-  <CircularProgress sx={{ color: '#93c54b' }} />
-     <Typography sx={{ ml: 2 }}>Caricamento...</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <CircularProgress sx={{ color: '#93c54b' }} />
+          <Typography sx={{ ml: 2 }}>Caricamento...</Typography>
         </Box>
       </Container>
     );
   }
 
-  const showTrattrici = templateId === '1';
-  const showMacchineDaRaccolta = templateId === '2';
+  // Utilizza templateId per determinare quali campi mostrare
+  const showTrattrici = templateId === 1; // Template per Trattrici
+  const showMacchineDaRaccolta = templateId === 2; // Template per Macchine da raccolta
 
   return (
-  <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <MezziIcon sx={{ mr: 1, fontSize: 32 }} />
-      <Typography variant="h4" component="h2" sx={{ fontWeight: 400 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <MezziIcon sx={{ mr: 1, fontSize: 32 }} />
+          <Typography variant="h4" component="h2" sx={{ fontWeight: 400 }}>
             {isEditMode ? 'Modifica Mezzo' : 'Aggiungi Mezzo'}
           </Typography>
-      </Box>
+        </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           {isEditMode && (
-      <IconButton
-     onClick={handleDeleteClick}
-       sx={{
-         backgroundColor: '#d32f2f',
-       color: 'white',
+            <IconButton
+              onClick={handleDeleteClick}
+              sx={{
+                backgroundColor: '#d32f2f',
+                color: 'white',
                 width: '30px',
                 height: '30px',
-             borderRadius: 1,
-            '&:hover': {
-       backgroundColor: '#b71c1c',
-          },
+                borderRadius: 1,
+                '&:hover': {
+                  backgroundColor: '#b71c1c',
+                },
               }}
             >
-     <DeleteIcon sx={{ fontSize: 20 }} />
+              <DeleteIcon sx={{ fontSize: 20 }} />
             </IconButton>
-      )}
-   <IconButton
-       onClick={() => navigate(`/customers/${customerId}/mezzi`)}
-     sx={{
-    backgroundColor: '#93c54b',
-    color: 'white',
-  width: '30px',
-  height: '30px',
-          borderRadius: 1,
-  '&:hover': {
-         backgroundColor: '#7db33c',
-          },
-     }}
-        >
-          <ChevronLeftIcon sx={{ fontSize: 20 }} />
-        </IconButton>
+          )}
+          <IconButton
+            onClick={() => navigate(`/customers/${customerId}/mezzi`)}
+            sx={{
+              backgroundColor: '#93c54b',
+              color: 'white',
+              width: '30px',
+              height: '30px',
+              borderRadius: 1,
+              '&:hover': {
+                backgroundColor: '#7db33c',
+              },
+            }}
+          >
+            <ChevronLeftIcon sx={{ fontSize: 20 }} />
+          </IconButton>
         </Box>
-  </Box>
+      </Box>
 
       <Divider sx={{ mb: 3 }} />
 
       {/* Customer Info Card */}
       {customerInfo && (
-     <Paper elevation={2} sx={{ p: 2, mb: 3, backgroundColor: '#f9f9f9' }}>
-   <Typography variant="body1" sx={{ fontWeight: 500, mb: 0.5 }}>
-   <strong>Ragione Sociale:</strong> {customerInfo.ragsoc}
-   </Typography>
-  <Typography variant="body2" color="text.secondary">
-    <strong>Indirizzo:</strong> {customerInfo.indirizzo}
-      </Typography>
-    <Typography variant="body2" color="text.secondary">
-    <strong>{'Citt\u00E0'}:</strong> {customerInfo.citta} <strong>Provincia:</strong> {customerInfo.provincia}
-      </Typography>
-     </Paper>
+        <Paper elevation={2} sx={{ p: 2, mb: 3, backgroundColor: '#f9f9f9' }}>
+          <Typography variant="body1" sx={{ fontWeight: 500, mb: 0.5 }}>
+            <strong>Ragione Sociale:</strong> {customerInfo.ragsoc}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            <strong>Indirizzo:</strong> {customerInfo.indirizzo}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            <strong>{'Citt\u00E0'}:</strong> {customerInfo.citta} <strong>Provincia:</strong> {customerInfo.provincia}
+          </Typography>
+        </Paper>
       )}
 
       {/* Form */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         {/* Tipologia e Caratteristiche - Row 1 */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-     <FormControl variant="standard" required sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+          <FormControl variant="standard" required sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}>
             <InputLabel>Tipologia del Mezzo *</InputLabel>
-  <Select value={tipologiaMezzo} onChange={(e) => handleTipologiaChange(e.target.value)}>
-   <MenuItem value="">-- Selezionare la tipologia --</MenuItem>
-     {tipologiaMezzoList.map((option) => (
-    <MenuItem key={option.id} value={option.id}>
-       {option.description}
-    </MenuItem>
-       ))}
-  </Select>
+            <Select value={tipologiaMezzo.toString()} onChange={(e) => handleTipologiaChange(e.target.value as string)}>
+              <MenuItem value="">-- Selezionare la tipologia --</MenuItem>
+              {tipologiaMezzoList.map((option) => (
+                <MenuItem key={option.id} value={option.id.toString()}>
+                  {option.description}
+                </MenuItem>
+              ))}
+            </Select>
           </FormControl>
 
-     <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
-          <strong>Caratteristiche</strong>
-  </Typography>
-  <FormControlLabel
-     control={<Checkbox checked={trattore} onChange={(e) => setTrattore(e.target.checked)} sx={{ color: '#93c54b', '&.Mui-checked': { color: '#93c54b' } }} />}
-       label="Trattore"
-       sx={{ mr: 3 }}
-    />
-   <FormControlLabel
+              <strong>Caratteristiche</strong>
+            </Typography>
+            <FormControlLabel
+              control={<Checkbox checked={trattore} onChange={(e) => setTrattore(e.target.checked)} sx={{ color: '#93c54b', '&.Mui-checked': { color: '#93c54b' } }} />}
+              label="Trattore"
+              sx={{ mr: 3 }}
+            />
+            <FormControlLabel
               control={<Checkbox checked={telescopico} onChange={(e) => setTelescopico(e.target.checked)} sx={{ color: '#93c54b', '&.Mui-checked': { color: '#93c54b' } }} />}
-    label="Telescopici con gancio"
-     />
- </Box>
-    </Box>
+              label="Telescopici con gancio"
+            />
+          </Box>
+        </Box>
 
         {/* Marca e Modello - Row 2 */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-    <FormControl variant="standard" required sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}>
-   <InputLabel>Marca *</InputLabel>
-  <Select value={brandId} onChange={(e) => setBrandId(e.target.value)}>
-     <MenuItem value="">-- Selezionare la marca --</MenuItem>
-  {marcaList.map((option) => (
-     <MenuItem key={option.id} value={option.id}>
-   {option.description}
-        </MenuItem>
-  ))}
-    </Select>
-      </FormControl>
+          <FormControl variant="standard" required sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}>
+            <InputLabel>Marca *</InputLabel>
+            <Select value={brandId.toString()} onChange={(e) => setBrandId(e.target.value === '' ? '' : parseInt(e.target.value, 10))}>
+              <MenuItem value="">-- Selezionare la marca --</MenuItem>
+              {marcaList.map((option) => (
+                <MenuItem key={option.id} value={option.id.toString()}>
+                  {option.description}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-  <TextField
-          variant="standard"
-  required
-       label="Modello *"
+          <TextField
+            variant="standard"
+            required
+            label="Modello *"
             value={modello}
-  onChange={(e) => setModello(e.target.value)}
-     sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-      />
+            onChange={(e) => setModello(e.target.value)}
+            sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+          />
         </Box>
 
         {/* Descrizione - Row 3 */}
         <Box sx={{ mb: 3 }}>
-    <TextField
-    fullWidth
-      variant="standard"
- required
+          <TextField
+            fullWidth
+            variant="standard"
+            required
             label="Descrizione *"
             value={descrizione}
-     onChange={(e) => setDescrizione(e.target.value)}
+            onChange={(e) => setDescrizione(e.target.value)}
           />
         </Box>
 
         {/* Matricola con Verifica - Row 4 */}
-     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'flex-end' }}>
-     <TextField
-    variant="standard"
-     label="Matricola"
-       value={matricola}
-  onChange={(e) => {
-      setMatricola(e.target.value);
-        setMatricolaValida(false);
- setMatricolaUsata(false);
-}}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'flex-end' }}>
+          <TextField
+            variant="standard"
+            label="Matricola"
+            value={matricola}
+            onChange={(e) => {
+              setMatricola(e.target.value);
+              setMatricolaValida(false);
+              setMatricolaUsata(false);
+            }}
             sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-    />
-   <Button
-   variant="contained"
-          onClick={handleVerificaMatricola}
-  sx={{
-    backgroundColor: '#93c54b',
- '&:hover': { backgroundColor: '#7db33c' },
-    textTransform: 'uppercase',
- fontWeight: 'bold',
-     fontSize: '11px',
- }}
-     >
-       Verifica
-   </Button>
+          />
+          <Button
+            variant="contained"
+            onClick={handleVerificaMatricola}
+            sx={{
+              backgroundColor: '#93c54b',
+              '&:hover': { backgroundColor: '#7db33c' },
+              textTransform: 'uppercase',
+              fontWeight: 'bold',
+              fontSize: '11px',
+            }}
+          >
+            Verifica
+          </Button>
           {matricolaValida && (
-   <Typography variant="body2" color="success.main" sx={{ ml: 2 }}>
-       ? Matricola utilizzabile
-    </Typography>
-)}
-      {matricolaUsata && (
-        <Typography variant="body2" color="error.main" sx={{ ml: 2 }}>
-          ⚠ Matricola già presente
-        </Typography>
-      )}
+            <Typography variant="body2" color="success.main" sx={{ ml: 2 }}>
+              ? Matricola utilizzabile
+            </Typography>
+          )}
+          {matricolaUsata && (
+            <Typography variant="body2" color="error.main" sx={{ ml: 2 }}>
+              ⚠ Matricola già presente
+            </Typography>
+          )}
         </Box>
 
         {/* Anno, Anno di produzione, Telematics - Row 5 */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'flex-end' }}>
-     <TextField
-     variant="standard"
-      label="Anno"
-        type="number"
-       value={anno}
-   onChange={(e) => setAnno(e.target.value)}
-            sx={{ flex: '1 1 calc(33.33% - 11px)', minWidth: '150px' }}
-          />
-    
-  <FormControl variant="standard" sx={{ flex: '1 1 calc(33.33% - 11px)', minWidth: '150px' }}>
-            <InputLabel>Anno di produzione</InputLabel>
-   <Select value={annoCreazione} onChange={(e) => setAnnoCreazione(e.target.value)}>
-         <MenuItem value="">-- Selezionare anno produzione --</MenuItem>
-  {annoProduzioneList.map((option) => (
-       <MenuItem key={option.id} value={option.id}>
-       {option.description}
-       </MenuItem>
-        ))}
+          <FormControl variant="standard" sx={{ flex: '1 1 calc(33.33% - 11px)', minWidth: '150px' }}>
+            <InputLabel>Anno</InputLabel>
+            <Select value={anno.toString()} onChange={(e) => setAnno(e.target.value === '' ? '' : parseInt(e.target.value, 10))}>
+              <MenuItem value="">-- Selezionare anno --</MenuItem>
+              {annoList.map((option) => (
+                <MenuItem key={option.id} value={option.id.toString()}>
+                  {option.description}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
-        <FormControlLabel
+          <FormControl variant="standard" sx={{ flex: '1 1 calc(33.33% - 11px)', minWidth: '150px' }}>
+            <InputLabel>Anno di produzione</InputLabel>
+            <Select value={annoCreazione.toString()} onChange={(e) => setAnnoCreazione(e.target.value === '' ? '' : parseInt(e.target.value, 10))}>
+              <MenuItem value="">-- Selezionare anno produzione --</MenuItem>
+              {annoProduzioneList.map((option) => (
+                <MenuItem key={option.id} value={option.id.toString()}>
+                  {option.description}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControlLabel
             control={<Checkbox checked={telematics} onChange={(e) => setTelematics(e.target.checked)} sx={{ color: '#93c54b', '&.Mui-checked': { color: '#93c54b' } }} />}
-    label="Telematics (Accessori CLAAS)"
-        sx={{ flex: '1 1 calc(33.33% - 11px)', minWidth: '200px' }}
+            label="Telematics (Accessori CLAAS)"
+            sx={{ flex: '1 1 calc(33.33% - 11px)', minWidth: '200px' }}
           />
         </Box>
 
@@ -530,140 +659,140 @@ const errorMessage = isEditMode ? 'Errore nell\'aggiornamento del mezzo' : 'Erro
         {showTrattrici && (
           <>
             <Divider sx={{ my: 3 }} />
-       <Typography variant="h6" sx={{ mb: 2, fontWeight: 500 }}>
-Dati Trattrici
-         </Typography>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 500 }}>
+              Dati Trattrici
+            </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-<TextField
-       variant="standard"
-      label="Ore"
-    type="number"
-     value={ore}
-  onChange={(e) => setOre(e.target.value)}
-    sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-       />
               <TextField
-    variant="standard"
-        label="Data rilievo ore (gg/mm/aaaa)"
-     placeholder="01/01/2024"
-    value={dataRilievoOre}
-       onChange={(e) => setDataRilievoOre(e.target.value)}
-    sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-     />
-         </Box>
+                variant="standard"
+                label="Ore"
+                type="number"
+                value={ore}
+                onChange={(e) => setOre(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+              />
+              <TextField
+                variant="standard"
+                label="Data rilievo ore (gg/mm/aaaa)"
+                placeholder="01/01/2024"
+                value={dataRilievoOre}
+                onChange={(e) => setDataRilievoOre(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+              />
+            </Box>
           </>
         )}
 
- {/* MACCHINE DA RACCOLTA - Ore dettagliate */}
+        {/* MACCHINE DA RACCOLTA - Ore dettagliate */}
         {showMacchineDaRaccolta && (
-     <>
+          <>
             <Divider sx={{ my: 3 }} />
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 500 }}>
-        Dati Macchine da Raccolta
-   </Typography>
-            
-   {/* Ore Rotore */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+              Dati Macchine da Raccolta
+            </Typography>
+
+            {/* Ore Rotore */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
               <TextField
                 variant="standard"
-         label="Ore del rotore"
-    type="number"
-            value={oreRotore}
-       onChange={(e) => setOreRotore(e.target.value)}
-      sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-   />
-      <TextField
-         variant="standard"
-       label="Data rilievo ore rotore (gg/mm/aaaa)"
-           placeholder="01/01/2024"
-        value={dataRilievoRotore}
-        onChange={(e) => setDataRilievoRotore(e.target.value)}
-       sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+                label="Ore del rotore"
+                type="number"
+                value={oreRotore}
+                onChange={(e) => setOreRotore(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
               />
-     </Box>
+              <TextField
+                variant="standard"
+                label="Data rilievo ore rotore (gg/mm/aaaa)"
+                placeholder="01/01/2024"
+                value={dataRilievoRotore}
+                onChange={(e) => setDataRilievoRotore(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+              />
+            </Box>
 
             {/* Ore Battitore */}
-   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-         <TextField
-        variant="standard"
-       label="Ore del battitore"
-   type="number"
-         value={oreBattitore}
-onChange={(e) => setOreBattitore(e.target.value)}
-           sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-     />
-     <TextField
-        variant="standard"
-      label="Data rilievo ore del battitore (gg/mm/aaaa)"
-     placeholder="01/01/2024"
-          value={dataRilievoBattitore}
-       onChange={(e) => setDataRilievoBattitore(e.target.value)}
-          sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+              <TextField
+                variant="standard"
+                label="Ore del battitore"
+                type="number"
+                value={oreBattitore}
+                onChange={(e) => setOreBattitore(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+              />
+              <TextField
+                variant="standard"
+                label="Data rilievo ore del battitore (gg/mm/aaaa)"
+                placeholder="01/01/2024"
+                value={dataRilievoBattitore}
+                onChange={(e) => setDataRilievoBattitore(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
               />
             </Box>
 
- {/* Ore Motore */}
+            {/* Ore Motore */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-         <TextField
-        variant="standard"
-      label="Ore del motore"
-       type="number"
-    value={oreMotore}
-         onChange={(e) => setOreMotore(e.target.value)}
-sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
-    />
-      <TextField
-      variant="standard"
-   label="Data rilievo ore del motore (gg/mm/aaaa)"
-   placeholder="01/01/2024"
-      value={dataRilievoMotore}
-           onChange={(e) => setDataRilievoMotore(e.target.value)}
-    sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+              <TextField
+                variant="standard"
+                label="Ore del motore"
+                type="number"
+                value={oreMotore}
+                onChange={(e) => setOreMotore(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
+              />
+              <TextField
+                variant="standard"
+                label="Data rilievo ore del motore (gg/mm/aaaa)"
+                placeholder="01/01/2024"
+                value={dataRilievoMotore}
+                onChange={(e) => setDataRilievoMotore(e.target.value)}
+                sx={{ flex: '1 1 calc(50% - 8px)', minWidth: '250px' }}
               />
             </Box>
-     </>
-)}
+          </>
+        )}
       </Paper>
 
       {/* Save Button */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
         <Button
           variant="contained"
-       size="large"
-    onClick={handleSave}
+          size="large"
+          onClick={handleSave}
           disabled={isBusy}
- sx={{
-    backgroundColor: '#93c54b',
-        textTransform: 'uppercase',
-  fontWeight: 'bold',
-fontSize: '11px',
-          width: '300px',
-    py: 1.5,
-   '&:hover': {
-    backgroundColor: '#7db33c',
-   },
-  }}
-     >
-       {isBusy ? 'Salvataggio...' : 'Salva'}
-  </Button>
+          sx={{
+            backgroundColor: '#93c54b',
+            textTransform: 'uppercase',
+            fontWeight: 'bold',
+            fontSize: '11px',
+            width: '300px',
+            py: 1.5,
+            '&:hover': {
+              backgroundColor: '#7db33c',
+            },
+          }}
+        >
+          {isBusy ? 'Salvataggio...' : 'Salva'}
+        </Button>
       </Box>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Conferma Eliminazione</DialogTitle>
         <DialogContent>
- <DialogContentText>
-     Sei sicuro di voler eliminare questo mezzo? Questa azione non pu� essere annullata.
+          <DialogContentText>
+            Sei sicuro di voler eliminare questo mezzo? Questa azione non pu� essere annullata.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} sx={{ color: '#666' }}>
-   Annulla
-        </Button>
-          <Button onClick={handleDeleteConfirm} sx={{ color: '#d32f2f', fontWeight: 'bold' }} autoFocus>
-    Elimina
+            Annulla
           </Button>
-    </DialogActions>
+          <Button onClick={handleDeleteConfirm} sx={{ color: '#d32f2f', fontWeight: 'bold' }} autoFocus>
+            Elimina
+          </Button>
+        </DialogActions>
       </Dialog>
     </Container>
   );

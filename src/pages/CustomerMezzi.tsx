@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
-import customersService from '../services/customers.service';
+import customersService, { type CustomerItem } from '../services/customers.service';
 import { toast } from 'react-toastify';
 
 interface CustomerInfo {
@@ -28,98 +28,83 @@ interface CustomerInfo {
   provincia: string;
 }
 
-interface Mezzo {
-  id: string;
-  marca: string;
-  modello: string;
-  matricola: string;
-  descrizione: string;
-  tipologia: string;
-}
-
 const CustomerMezzi = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
-  const [mezzi, setMezzi] = useState<Mezzo[]>([]);
+  const [mezzi, setMezzi] = useState<CustomerItem[]>([]);
 
   useEffect(() => {
-    loadCustomerInfo();
-    loadMezzi();
+    const loadData = async () => {
+      if (!id) return;
+      
+      // Load customer info
+      try {
+        const summary = await customersService.getCustomerSummary(id);
+        setCustomerInfo({
+          ragsoc: summary.descr1,
+          indirizzo: summary.address,
+          citta: summary.city,
+          provincia: summary.province,
+        });
+      } catch (error) {
+        console.error('Error loading customer summary:', error);
+        toast.error('Errore nel caricamento dei dati del cliente');
+      }
+
+      // Load mezzi
+      setIsLoading(true);
+      try {
+        const customerItems = await customersService.getCustomerItemsByCustomerId(id);
+        setMezzi(customerItems);
+      } catch (error) {
+        console.error('Error loading mezzi:', error);
+        toast.error('Errore nel caricamento dei mezzi');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [id]);
 
-  const loadCustomerInfo = async () => {
-    if (!id) return;
-    
-    try {
-      const summary = await customersService.getCustomerSummary(id);
-      setCustomerInfo({
-        ragsoc: summary.descr1,
-        indirizzo: summary.address,
-        citta: summary.city,
-        provincia: summary.province,
-      });
-    } catch (error) {
-      console.error('Error loading customer summary:', error);
-      toast.error('Errore nel caricamento dei dati del cliente');
-    }
-  };
 
-  const loadMezzi = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: Implement API call to fetch customer vehicles
-      console.log('Loading mezzi for customer ID:', id);
-   
-      // Sample data for testing
-      const sampleData: Mezzo[] = [
-        { id: '1', marca: 'John Deere', modello: '6150R', matricola: 'JD12345', descrizione: 'Trattore agricolo', tipologia: 'Trattore' },
-      { id: '2', marca: 'New Holland', modello: 'T7.315', matricola: 'NH67890', descrizione: 'Trattore alta potenza', tipologia: 'Trattore' },
-     { id: '3', marca: 'Claas', modello: 'Lexion 780', matricola: 'CL11223', descrizione: 'Mietitrebbia', tipologia: 'Mietitrebbia' },
-      ];
-      setMezzi(sampleData);
-    } catch (error) {
- console.error('Error loading mezzi:', error);
-} finally {
-      setIsLoading(false);
- }
-  };
 
   const handleAddMezzo = () => {
     navigate(`/customers/${id}/mezzi/create`);
   };
 
-  const handleEditMezzo = (mezzoId: string) => {
+  const handleEditMezzo = (mezzoId: number) => {
     navigate(`/customers/${id}/mezzi/${mezzoId}/edit`);
   };
 
   const columns: GridColDef[] = [
     {
-      field: 'marca',
+      field: 'brand',
       headerName: 'Marca',
       flex: 1,
       minWidth: 150,
     },
     {
- field: 'modello',
+      field: 'model',
       headerName: 'Modello',
       flex: 1,
       minWidth: 150,
     },
     {
-    field: 'matricola',
-      headerName: 'Matricola',
-  width: 130,
+      field: 'serialNumber',
+      headerName: 'Numero Serie',
+      width: 130,
     },
     {
-      field: 'descrizione',
+      field: 'description',
       headerName: 'Descrizione',
       flex: 2,
       minWidth: 200,
     },
     {
-      field: 'tipologia',
+      field: 'typologyDescription',
       headerName: 'Tipologia',
       width: 150,
     },

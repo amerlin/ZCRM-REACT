@@ -222,10 +222,10 @@ const Summary = () => {
               Dettaglio per Categoria
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              {renderSummaryCard('Clienti', summary.newCustomers, summary.modifiedCustomers)}
+              {renderSummaryCard('Clienti', summary.newCustomers, summary.modifiedCustomers, '/confirm/customers', '/confirm/customers')}
               {renderSummaryCard('Destinazioni', summary.newDestinations, summary.modifiedDestinations, '/confirm/destinations', '/confirm/destinations')}
               {renderSummaryCard('Contatti', summary.newReferences, summary.modifiedReferences, '/confirm/contacts', '/confirm/contacts')}
-              {renderSummaryCard('Mezzi', summary.newItems, summary.modifiedItems)}
+              {renderSummaryCard('Mezzi', summary.newItems, summary.modifiedItems, '/confirm/items', '/confirm/items')}
             </Box>
           </Box>
         </>
