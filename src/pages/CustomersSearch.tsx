@@ -20,27 +20,7 @@ import {
   Search as SearchIcon,
   ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
-import { type Customer } from '../services/customers.service';
-
-interface Agent {
-  id: string;
-  description: string;
-}
-
-interface Province {
-  shortdescription: string;
-  fulldescription: string;
-}
-
-interface Tipologia {
-  id: string;
-  description: string;
-}
-
-interface Category {
-  id: string;
-  description: string;
-}
+import customersService, { type Customer, type Agent, type Province, type CustomerCategory, type CustomerType } from '../services/customers.service';
 
 const CustomersSearch = () => {
   const navigate = useNavigate();
@@ -65,8 +45,8 @@ const CustomersSearch = () => {
   // Dropdown lists
   const [agentList, setAgentList] = useState<Agent[]>([]);
   const [provinciaList, setProvinciaList] = useState<Province[]>([]);
-  const [tipologiaList, setTipologiaList] = useState<Tipologia[]>([]);
-  const [categoryList, setCategoryList] = useState<Category[]>([]);
+  const [tipologiaList, setTipologiaList] = useState<CustomerType[]>([]);
+  const [categoryList, setCategoryList] = useState<CustomerCategory[]>([]);
 
   const [isBusy, setIsBusy] = useState(false);
   const [customerList] = useState<Customer[]>([]);
@@ -80,27 +60,51 @@ const CustomersSearch = () => {
   }, []);
 
   const loadAgents = async () => {
-    // TODO: Implement API call
-    console.log('Load agents...');
-    setAgentList([]);
+    try {
+      console.log('Loading agents...');
+      const agents = await customersService.getAgents();
+      console.log('Loaded agents:', agents);
+      setAgentList(agents);
+    } catch (error) {
+      console.error('Error loading agents:', error);
+      setAgentList([]);
+    }
   };
 
   const loadProvinces = async () => {
-    // TODO: Implement API call
-    console.log('Load provinces...');
-    setProvinciaList([]);
+    try {
+      console.log('Loading provinces...');
+      const provinces = await customersService.getProvinces();
+      console.log('Loaded provinces:', provinces);
+      setProvinciaList(provinces);
+    } catch (error) {
+      console.error('Error loading provinces:', error);
+      setProvinciaList([]);
+    }
   };
 
   const loadTipologie = async () => {
-    // TODO: Implement API call
-    console.log('Load tipologie...');
-    setTipologiaList([]);
+    try {
+      console.log('Loading customer types...');
+      const customerTypes = await customersService.getCustomerTypes();
+      console.log('Loaded customer types:', customerTypes);
+      setTipologiaList(customerTypes);
+    } catch (error) {
+      console.error('Error loading customer types:', error);
+      setTipologiaList([]);
+    }
   };
 
   const loadCategories = async () => {
-    // TODO: Implement API call
-    console.log('Load categories...');
-    setCategoryList([]);
+    try {
+      console.log('Loading customer categories...');
+      const categories = await customersService.getCustomerCategories();
+      console.log('Loaded customer categories:', categories);
+      setCategoryList(categories);
+    } catch (error) {
+      console.error('Error loading customer categories:', error);
+      setCategoryList([]);
+    }
   };
 
   const handleSearch = async () => {
@@ -221,8 +225,8 @@ value={ragsoc}
           >
      <MenuItem value="">-- Selezionare la provincia --</MenuItem>
   {provinciaList.map((option) => (
-  <MenuItem key={option.shortdescription} value={option.shortdescription}>
-       {option.fulldescription}
+  <MenuItem key={option.shortDescription} value={option.shortDescription}>
+       {option.fullDescription}
     </MenuItem>
  ))}
      </Select>
@@ -237,7 +241,7 @@ value={tipologia}
  <MenuItem value="">-- Selezionare la tipologia cliente --</MenuItem>
      {tipologiaList.map((option) => (
   <MenuItem key={option.id} value={option.id}>
-          {option.description}
+          {option.name}
     </MenuItem>
        ))}
      </Select>
@@ -326,22 +330,7 @@ label={'Citt\u00E0'}
 Tabella risultati (da implementare)
         </Typography>
           </Box>
-     ) : (
-          <Box sx={{ 
-   border: '1px dashed #ccc', 
-    borderRadius: 1, 
-      p: 4, 
-       textAlign: 'center',
-minHeight: '100px',
-       display: 'flex',
-     alignItems: 'center',
-        justifyContent: 'center',
-       }}>
-          <Typography variant="body1" color="text.secondary">
-    Effettua una ricerca per visualizzare i risultati
-   </Typography>
-          </Box>
- )}
+     ) : null}
       </Box>
 
   {/* Bottom Spacers */}
