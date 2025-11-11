@@ -16,11 +16,14 @@ TextField,
   CircularProgress,
   IconButton,
 } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
 import {
   Search as SearchIcon,
   ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
-import customersService, { type Customer, type Agent, type Province, type CustomerCategory, type CustomerType } from '../services/customers.service';
+import { toast } from 'react-toastify';
+import customersService, { type Customer, type Agent, type Province, type CustomerCategory, type CustomerType, type CustomerSearchRequest, type CustomerSearchResult } from '../services/customers.service';
 
 const CustomersSearch = () => {
   const navigate = useNavigate();
@@ -34,6 +37,8 @@ const CustomersSearch = () => {
 
   // Form state
   const [ragsoc, setRagsoc] = useState('');
+  const [address, setAddress] = useState('');
+  const [cap, setCap] = useState('');
   const [agente, setAgente] = useState('');
   const [isActiveCustomer, setIsActiveCustomer] = useState(true);
   const [provincia, setProvincia] = useState('');
@@ -49,7 +54,7 @@ const CustomersSearch = () => {
   const [categoryList, setCategoryList] = useState<CustomerCategory[]>([]);
 
   const [isBusy, setIsBusy] = useState(false);
-  const [customerList] = useState<Customer[]>([]);
+  const [customerList, setCustomerList] = useState<CustomerSearchResult[]>([]);
 
   useEffect(() => {
     // Load dropdown data
@@ -110,25 +115,67 @@ const CustomersSearch = () => {
   const handleSearch = async () => {
     setIsBusy(true);
     try {
-      const searchModel = {
-    ragionesociale: ragsoc,
-        citta,
-provincia,
-        isoptimistic: isOptimistic,
-idagent: agente,
-        tipologia,
-   categoria,
-    isactivecustomer: isActiveCustomer,
-  };
+      const searchRequest: CustomerSearchRequest = {
+        ragioneSociale: ragsoc,
+        address: address,
+        city: citta,
+        provinceId: provincia ? parseInt(provincia) : 0,
+        cap: cap,
+        agentId: agente ? parseInt(agente) : 0,
+        isOptimistic: isOptimistic,
+        isActiveCustomer: isActiveCustomer,
+        categoryId: categoria ? parseInt(categoria) : 0,
+        tipologyId: tipologia ? parseInt(tipologia) : 0
+      };
 
-      // TODO: Implement API call
-      console.log('Search with:', searchModel);
+      console.log('Search request:', searchRequest);
+      const results = await customersService.searchCustomers(searchRequest);
+      console.log('Search results:', results);
+      setCustomerList(results);
+      
+      if (results.length === 0) {
+        toast.info('Nessun cliente trovato con i criteri specificati');
+      } else {
+        toast.success(`Trovati ${results.length} clienti`);
+      }
     } catch (error) {
-console.error('Search error:', error);
+      console.error('Search error:', error);
+      toast.error('Errore durante la ricerca clienti');
+      setCustomerList([]);
     } finally {
       setIsBusy(false);
     }
   };
+
+  // Define columns for the results table
+  const columns: GridColDef[] = [
+    {
+      field: 'id',
+      headerName: 'ID',
+      width: 100,
+    },
+    {
+      field: 'descr1',
+      headerName: 'Ragione Sociale',
+      width: 300,
+      flex: 1,
+    },
+    {
+      field: 'city',
+      headerName: 'Città',
+      width: 150,
+    },
+    {
+      field: 'prov',
+      headerName: 'Provincia',
+      width: 100,
+    },
+    {
+      field: 'typology',
+      headerName: 'Tipologia',
+      width: 150,
+    },
+  ];
 
   return (
     <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
@@ -317,21 +364,30 @@ label={'Citt\u00E0'}
       {/* Spacer */}
       <Box sx={{ mb: 2 }} />
 
-      {/* Results Table Placeholder */}
-      <Box sx={{ mb: 3 }}>
-        {customerList.length > 0 ? (
-    <Box sx={{ 
-      border: '1px solid #ccc', 
-  borderRadius: 1, 
-      p: 4, 
-      textAlign: 'center',
-  }}>
-        <Typography variant="body1">
-Tabella risultati (da implementare)
-        </Typography>
+      {/* Results Table */}
+      {customerList.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Risultati della ricerca ({customerList.length} clienti trovati)
+          </Typography>
+          <Box sx={{ height: 400, width: '100%' }}>
+            <DataGrid
+              rows={customerList}
+              columns={columns}
+              initialState={{
+                pagination: {
+                  paginationModel: {
+                    pageSize: 10,
+                  },
+                },
+              }}
+              pageSizeOptions={[5, 10, 25]}
+              checkboxSelection
+              disableRowSelectionOnClick
+            />
           </Box>
-     ) : null}
-      </Box>
+        </Box>
+      )}
 
   {/* Bottom Spacers */}
       <Box sx={{ mb: 2 }} />

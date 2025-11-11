@@ -220,6 +220,27 @@ export interface CheckMatricolaResponse {
   customerDescription: string;
 }
 
+export interface CustomerSearchRequest {
+  ragioneSociale: string;
+  address: string;
+  city: string;
+  provinceId: number;
+  cap: string;
+  agentId: number;
+  isOptimistic: boolean;
+  isActiveCustomer: boolean;
+  categoryId: number;
+  tipologyId: number;
+}
+
+export interface CustomerSearchResult {
+  id: number;
+  descr1: string;
+  city: string;
+  prov: string;
+  typology: string;
+}
+
 export interface Agent {
   id: number;
   shortDescription: string;
@@ -426,6 +447,13 @@ class CustomersService {
    */
   async getAllevamentoTypes(): Promise<{id: string; description: string}[]> {
     return apiService.get<{id: string; description: string}[]>(`/TypeAllevamento/GetAllevamentoTypes`);
+  }
+
+  /**
+   * Search customers
+   */
+  async searchCustomers(searchData: CustomerSearchRequest): Promise<CustomerSearchResult[]> {
+    return apiService.post<CustomerSearchResult[]>('/Customers/Search', searchData);
   }
 
   /**
