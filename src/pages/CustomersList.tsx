@@ -94,9 +94,32 @@ const CustomersList = () => {
     }
   };
 
-  const handleExportToExcel = () => {
-    // TODO: Implement Excel export functionality
-    console.log('Export to Excel...');
+  const handleExportToExcel = async () => {
+    try {
+      setIsBusy(true);
+      console.log('Exporting to Excel...');
+      
+      const blob = await customersService.exportExcel();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'customers.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Export completato con successo');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Errore durante l\'export Excel');
+    } finally {
+      setIsBusy(false);
+    }
   };
 
   const handleEdit = (id: string) => {

@@ -4,6 +4,7 @@
  */
 
 import apiService from './api.service';
+import config from '../config/app.config';
 
 export interface Customer {
   id: string;
@@ -158,6 +159,32 @@ export interface CustomerItemDetail {
 export interface CreateCustomerItemRequest {
   id: number;
   templateId: number;
+  typeId: number;
+  customerId: number;
+  referenceRecordId: number;
+  brandId: number;
+  description: string;
+  model: string;
+  year: number;
+  yearCreated: number;
+  matricola: string;
+  isActive: boolean;
+  telematics: boolean;
+  trattore: boolean;
+  telescopico: boolean;
+  hour: number;
+  hourAtDay: string; // ISO date string
+  rotorHour: number;
+  rotorHourAtDate: string; // ISO date string
+  battHour: number;
+  battHourAtDate: string; // ISO date string
+  motorHour: number;
+  motorHourAtDate: string; // ISO date string
+}
+
+export interface UpdateCustomerItemRequest {
+  id: number;
+  templateId: number; // Numeric value, not string
   typeId: number;
   customerId: number;
   referenceRecordId: number;
@@ -536,6 +563,13 @@ class CustomersService {
   }
 
   /**
+   * Update existing customer item/mezzo
+   */
+  async updateCustomerItem(itemData: UpdateCustomerItemRequest): Promise<void> {
+    return apiService.put<void>(`/CustomerItems/Update`, itemData);
+  }
+
+  /**
    * Get customer item details by ID
    */
   async getCustomerItemById(itemId: string): Promise<CustomerItemDetail> {
@@ -559,6 +593,39 @@ class CustomersService {
    */
   async getAgents(): Promise<Agent[]> {
     return apiService.get<Agent[]>('/Agents/GetAgents');
+  }
+
+  /**
+   * Export customers to Excel
+   */
+  async exportExcel(): Promise<Blob> {
+    const response = await fetch(`${config.apiBaseUrl}/customers/ExportExcel`, {
+      method: 'GET',
+      headers: {
+        'Authorization': this.getAuthHeader()
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to export Excel file');
+    }
+    
+    return response.blob();
+  }
+
+  private getAuthHeader(): string {
+    const storedAuth = localStorage.getItem('basicAuthentication');
+    if (storedAuth) {
+      try {
+        const authData = JSON.parse(storedAuth);
+        if (authData.token) {
+          return `Bearer ${authData.token}`;
+        }
+      } catch (error) {
+        console.error('Failed to parse auth token', error);
+      }
+    }
+    return '';
   }
 
   /**

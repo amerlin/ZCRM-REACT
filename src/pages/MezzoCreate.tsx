@@ -28,7 +28,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import customersService, { type CreateCustomerItemRequest, type CustomerItemDetail, type CheckMatricolaResponse } from '../services/customers.service';
+import customersService, { type CreateCustomerItemRequest, type UpdateCustomerItemRequest, type CustomerItemDetail, type CheckMatricolaResponse } from '../services/customers.service';
 
 interface CustomerInfo {
   ragsoc: string;
@@ -393,9 +393,35 @@ const MezzoCreate = () => {
       console.log('Mezzo data:', mezzoData);
 
       if (isEditMode) {
-        // TODO: Implement update API when available
-        toast.warning('Funzione di aggiornamento non ancora implementata');
-        return;
+        // Create update request with proper dates
+        const updateData: UpdateCustomerItemRequest = {
+          id: mezzoId ? parseInt(mezzoId) : 0,
+          templateId: selectedTipologia.templateId,
+          typeId: selectedTipologia.id,
+          customerId: customerId ? parseInt(customerId) : 0,
+          referenceRecordId: 0,
+          brandId: brandId || 0,
+          description: descrizione,
+          model: modello,
+          year: typeof anno === 'number' ? anno : 2024,
+          yearCreated: typeof annoCreazione === 'number' ? annoCreazione : 2024,
+          matricola: matricola,
+          isActive: true,
+          telematics: telematics,
+          trattore: trattore,
+          telescopico: telescopico,
+          hour: ore ? parseInt(ore) : 0,
+          hourAtDay: dataRilievoOre ? new Date(dataRilievoOre).toISOString() : new Date().toISOString(),
+          rotorHour: oreRotore ? parseInt(oreRotore) : 0,
+          rotorHourAtDate: dataRilievoRotore ? new Date(dataRilievoRotore).toISOString() : new Date().toISOString(),
+          battHour: oreBattitore ? parseInt(oreBattitore) : 0,
+          battHourAtDate: dataRilievoBattitore ? new Date(dataRilievoBattitore).toISOString() : new Date().toISOString(),
+          motorHour: oreMotore ? parseInt(oreMotore) : 0,
+          motorHourAtDate: dataRilievoMotore ? new Date(dataRilievoMotore).toISOString() : new Date().toISOString()
+        };
+
+        console.log('Update data:', updateData);
+        await customersService.updateCustomerItem(updateData);
       } else {
         await customersService.createCustomerItem(mezzoData);
       }
